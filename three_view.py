@@ -1,4 +1,5 @@
-from PIL import Image
+from PIL import Image, ImageOps
+import hashlib
 import base64
 from io import BytesIO
 import torch
@@ -8,52 +9,6 @@ from server import PromptServer
 import time
 from aiohttp import web
 import folder_paths
-
-# handle proxy response
-@PromptServer.instance.routes.post('/HYPE/proxy_reply')
-async def proxyHandle(request):
-    post = await request.json()
-    MessageHolder.addMessage(post["node_id"], post["outputs"])
-    return web.json_response({"status": "ok"})
-
-class ThreeView:
-    @classmethod
-    def INPUT_TYPES(s):
-        return {
-        "required": {},
-        "hidden": { "unique_id":"UNIQUE_ID", "image_data" : ("IMAGE", {}) }
-        }
-    def IS_CHANGED(id):
-        return True
-
-    RETURN_TYPES = ("IMAGE",)
-    RETURN_NAMES = ("image",)
-    FUNCTION = "process_three_js_image"
-    CATEGORY = "lth"
-        
-    def process_three_js_image(self, unique_id, image_data):
-
-        # Decode the image from base64
-        #image_data = self.finalImage
-        #image_data = image_data.split(",")[1]
-        image_data = np.zeros((512, 768, 3), dtype=np.uint8)
-        image_bytes = base64.b64decode(image_data)
-        image = Image.open(BytesIO(image_bytes)).convert("RGB")
-        
-        # Convert the PIL image to a PyTorch tensor
-        image_np = np.array(image).astype(np.float32) / 255.0
-        image_tensor = torch.from_numpy(image_np).unsqueeze(0).permute(0, 3, 1, 2)
-
-        return (image_tensor,)
-
-
-NODE_CLASS_MAPPINGS = {
-    "ThreeView": ThreeView
-}
-
-NODE_DISPLAY_NAME_MAPPINGS = {
-    "ThreeView": "Three View"
-}
 
 
 # Message Handling
@@ -71,5 +26,56 @@ class MessageHolder:
             time.sleep(period)
         message = self.messages.pop(str(id),None)
         return message
+
+# handle proxy response
+@PromptServer.instance.routes.post('/HYPE/proxy_reply')
+async def proxyHandle(request):
+    post = await request.json()
+    MessageHolder.addMessage(post["node_id"], post["outputs"])
+    return web.json_response({"status": "ok"})
+
+
+class ThreeView:
+    @classmethod
+    def INPUT_TYPES(self):
+        return {
+        "required": {
+            "imageThreejs": ("STRING", {"default": "theejs_image.png"})
+        },
+        "hidden": { "unique_id":"UNIQUE_ID" }
+        }
+    
+    @classmethod
+    def IS_CHANGED(self, imageThreejs, unique_id):
+        image_path = folder_paths.get_annotated_filepath(imageThreejs)
+        m = hashlib.sha256()
+        with open(image_path, "rb") as f:
+            m.update(f.read())
+
+        return m.digest().hex()
+
+    RETURN_TYPES = ("IMAGE",)
+    RETURN_NAMES = ("image",)
+    FUNCTION = "process_three_js_image"
+    CATEGORY = "lth"
+        
+    def process_three_js_image(self, imageThreejs, unique_id):
+        pathImage = folder_paths.get_annotated_filepath(imageThreejs)
+        i = Image.open(pathImage)
+        i = ImageOps.exif_transpose(i)
+        image = i.convert("RGB")
+        image = np.array(image).astype(np.float32) / 255.0
+        image = torch.from_numpy(image)[None,]
+
+        return (image,)
+
+
+NODE_CLASS_MAPPINGS = {
+    "ThreeView": ThreeView
+}
+
+NODE_DISPLAY_NAME_MAPPINGS = {
+    "ThreeView": "Three View"
+}
 
 
