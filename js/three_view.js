@@ -1,6 +1,8 @@
 import { app } from "../../scripts/app.js";
 import * as THREE from "./lib/three.module.js";
-import { OrbitControls } from "./lib/OrbitControls.js";
+import { OrbitControls } from "./lib/jsm/controls/OrbitControls.js";
+import { GLTFLoader } from './lib/jsm/loaders/GLTFLoader.js';
+import { DRACOLoader } from './lib/jsm/loaders/DRACOLoader.js';
 
 function resize(w, size, renderer, camera) {
     if (size.w === w) return;
@@ -113,7 +115,7 @@ async function widgetThreeJS(node, base_filename, inputData, app) {
 
         draw: function (ctx, node, widgetWidth, posY, widgetHeight ) {
 
-            cube.rotation.y += 0.001;
+            cube.rotation.y += 0.01;
 
             resize(widgetWidth, size, renderer, camera);
 
