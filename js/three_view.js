@@ -1,190 +1,236 @@
 import { app } from "../../scripts/app.js";
-import * as THREE from "./lib/three.module.js";
-import { OrbitControls } from "./lib/jsm/controls/OrbitControls.js";
-import { GLTFLoader } from './lib/jsm/loaders/GLTFLoader.js';
-import { DRACOLoader } from './lib/jsm/loaders/DRACOLoader.js';
+import { api } from "../../scripts/api.js";
+//import * as THREE from "./lib/three.module.js";
+//import { OrbitControls } from "./lib/OrbitControls.js";
+import { $el } from "../../scripts/ui.js";
 
-function resize(w, size, renderer, camera) {
-    if (size.w === w) return;
-    size.w = w;
-    size.h = w * size.r;
-    renderer.setSize(size.w, size.h);
-    camera.aspect = size.r;
-    camera.updateProjectionMatrix();
-}
+import { ThreeCanvas } from "./ThreeCanvas.js";
 
-async function widgetThreeJS(node, base_filename, inputData, app) {
+const DEBUG = true;
 
-    // Create the canvas element once and reuse it
-    const canvas = document.createElement("canvas");
-    const size = { w: 200, h: 200, r: 1 };
 
-    canvas.width = size.w;
-    canvas.height = size.h;
 
-    // Calculate aspect ratio
-    const aspectRatio = size.w / size.h;
+// Function create widget
+async function widgetThreeJS(node, nodeName, base_filename, inputData, app) {
+  // Find widget stored image filename for threejs, and hide him.
+  const widgeImageThree = node.widgets.find((w) => w.name === "imageThreejs");
+  widgeImageThree.value = base_filename;
+  widgeImageThree.type = "converted-widget";
 
-    // For test: views random cube color,
-    const colorsTest = `rgb(${Math.floor(Math.random() * 255)},${Math.floor( Math.random() * 255 )},${Math.floor(Math.random() * 255)})`;
-
-    // Set up three.js scene with blue background
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color("blue");
-
-    // Camera setup
-    const camera = new THREE.PerspectiveCamera(75, size.r, 0.1, 1000);
-    camera.position.z = 3;
-
-    // Renderer setup
-    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-    renderer.setSize(size.w, size.h);
-
-    const controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.minDistance = 1;
-    controls.maxDistance = 10;
-    controls.target.set(0, 0, 0);
-    controls.update();
-
-    // Red cube creation
-    const geometry = new THREE.BoxGeometry(1, 1, 1);
-    const material = new THREE.MeshBasicMaterial({
-        color: colorsTest,
-        wireframe: true,
-    });
-    const cube = new THREE.Mesh(geometry, material);
-    scene.add(cube);
-
-    // Find widget stored image filename for threejs, and hide him.
-    const widgeImageThreejs = node.widgets.find((w) => w.name === "imageThreejs");
-    widgeImageThreejs.value = base_filename;
-    widgeImageThreejs.type = "converted-widget";
-
-    widgeImageThreejs.computeSize = () => [0, -4];
-    if (widgeImageThreejs.linkedWidgets) {
-        for (const link of widgeImageThreejs.linkedWidgets) {
-            link.type = "converted-widget";
-            link.computeSize = () => [0, -4];
-        }
+  widgeImageThree.computeSize = () => [0, -4];
+  if (widgeImageThree.linkedWidgets) {
+    for (const link of widgeImageThree.linkedWidgets) {
+      link.type = "converted-widget";
+      link.computeSize = () => [0, -4];
     }
+  }
 
-    // Function send image to server
-    function sendFileToServer(fileName) {
-        return new Promise((res, rej) => {
-            // Upload file image to server
-            const uploadFile = async (blobFile) => {
-            try {
-                const resp = await fetch("/upload/image", {
-                    method: "POST",
-                    body: blobFile,
-                });
+  const threeCanvas = new ThreeCanvas(node, widgeImageThree);
+  threeCanvas.init();
 
-                if (resp.status === 200) {
-                    const data = await resp.json();
-
-                    widgeImageThreejs.value = data.name;
-                    res(true);
-                } else {
-                    alert(resp.status + " - " + resp.statusText);
-                    rej(false);
-                }
-            } catch (error) {
-                  console.log(error);
-                  rej(false);
-            }
-        };
-
-        // Convert canvas toBlob object
-        canvas.toBlob( async function (blob) {
-            let formData = new FormData();
-            formData.append("image", blob, fileName);
-            formData.append("overwrite", "true");
-            //formData.append("type", "temp");
-            await uploadFile(formData);
-            }, "image/png");
-        });
-    }
-
-    let delayTime = 0;
-
-    const widget = {
-
-        name: "threeCanvas",
-        type: "custom_widget",
-
-        draw: function (ctx, node, widgetWidth, posY, widgetHeight ) {
-
-            cube.rotation.y += 0.01;
-
-            resize(widgetWidth, size, renderer, camera);
-
-            // Render the scene
-            renderer.render(scene, camera);
-
-            // Draw the renderer's canvas onto the node's context
-            ctx.drawImage( canvas, 0, posY, size.w, size.h );
-
-            // Adjust the node's size to fit the canvas
-            node.size[1] = posY + size.h + 10;
-
-            // Optionally, request a redraw for smooth animation
-            app.graph.setDirtyCanvas(true, false);
-
-            // Add delay time save image, maybe future save image when translate, rotate, scale, if not animated
-            if (delayTime >= 10) {
-                //   console.log("Time save file!");
-                sendFileToServer(base_filename);
-                delayTime = 0;
-            }
-            delayTime += 1;
-
+  // Add panel widget
+  const panelWrapper = $el("div.threeCanvasPanelWrapper", {}, [
+    $el(
+      "div.threeCanvasPanel",
+      {
+        style: {
+          display: "flex",
+          padding: "0px",
+          margin: "0px",
+          background: "#5a5a5a",
+          minHeight: "30px",
+          justifyContent: "flex-start",
+          alignItems: "center",
+          gap: "2px",
         },
-    };
+      },
+      [
+        $el("button.threeCanvasAdd", {
+          style: {
+            padding: "3px",
+          },
+          textContent: "Add",
+          onclick: (e) =>
+            threeCanvas.addObjectToScene(
+              "sphere",
+              function () {
+                this.object.rotation.z += 0.01;
+              },
+              { radius: 0.5, widthSegments: 6, heightSegments: 6 },
+              { color: "red" }
+            ),
+        }),
+        $el("button.threeCanvasDel", {
+          style: {
+            padding: "3px",
+            color: "red",
+          },
+          textContent: "Del",
+          onclick: (e) => alert("Dev..."),
+        }),
+      ]
+    ),
+  ]);
 
-    // Serialize node data, you can save the image here too
-    node.onSerialize = () => {};
+  const panelWidget = node.addDOMWidget(
+    nodeName,
+    "threeCanvasPanel",
+    panelWrapper
+  );
+  panelWidget.computeSize = () => {
+    return [node.size[0], 45];
+  };
+  // end - Panel
 
-    node.addCustomWidget( widget );
+  // Add widget threeCanvas
+  const dom = threeCanvas.getDom();
+  const widget = node.addDOMWidget("threeCanvas", "custom_widget", dom, {
+    getValue() {
+      return { test_value: "hello world" };
+    },
+    setValue(v) {
+      // console.log(v);
+    },
+  });
 
-    node.onDragOver = function (e) { return false; };
-    node.onDragDrop = function (e) { return false; };
+  const origDraw = widget.draw;
+  widget.draw = function () {
+    origDraw?.apply(this, arguments);
+    const [ctx, nodeThree, widgetWidth, posY] = arguments;
+    nodeThree.size[1] = posY + threeCanvas.size.h + threeCanvas.size.offset;
 
-    await sendFileToServer(base_filename);
-    return widget;
+    // Update renderer
+    threeCanvas.update(node.size[0]);
+    //app.graph.setDirtyCanvas(true, false);
+  };
 
+  widget.threeCanvas = threeCanvas;
+  // widget.callback = () => {};
+
+  // Note: If the node is collapsed, the draw method does not work and the canvas will not update.
+  // const animator = () => {
+  //   threeCanvas.update(node.size[0]);
+  //   app.graph.setDirtyCanvas(true, false);
+  //   requestAnimationFrame(animator);
+  // };
+
+  // requestAnimationFrame(animator);
+
+  // Serialize node data, you can save the image here too
+  node.onSerialize = (n) => {
+    //console.log('YOOOOO')
+  };
+
+  node.onDragOver = function (e) {
+    return false;
+  };
+  node.onDragDrop = function (e) {
+    return false;
+  };
+
+  console.log(api.queuePrompt);
+
+  // https://docs.comfy.org/essentials/comms_messages
+  api.addEventListener("execution_start", async () => {
+    console.log("execution_start...");
+    await threeCanvas.sendFileToServer(widgeImageThree.value);
+  });
+
+  // Custom event save image
+  // Run when inside three_view.py, variable WAIT_IMAGE_SAVE = True, execution_start need add comment.
+  api.addEventListener("lth_save_image", async ({ detail }) => {
+    const { unique_id } = detail;
+    if (+unique_id !== node.id) return;
+
+    await threeCanvas
+      .sendFileToServer(widgeImageThree.value)
+      .then(async (result) => {
+        if (result) {
+          await api
+            .fetchApi("/lth/save_complete", {
+              method: "POST",
+              body: JSON.stringify({
+                unique_id: node.id.toString(),
+              }),
+            })
+            .then((resp) => resp?.json())
+            .then((json) => {
+              DEBUG &&
+                console.log(
+                  `ThreeView${unique_id}, filename '${widgeImageThree.value}': ${json?.status}`
+                );
+              return;
+            });
+        }
+      })
+      .catch((err) => DEBUG && console.error(`Error save image: ${err}`));
+  });
+
+  await threeCanvas.sendFileToServer(widgeImageThree.value);
+
+  return widget;
 }
 
 app.registerExtension({
-    name: "Three View",
-    async beforeRegisterNodeDef(nodeType, nodeData, app) {
-        if (nodeType.comfyClass === "ThreeView") {
-            nodeType.prototype.onExecuted = function (message) {
-                console.log("yooooo is running !!!!");
-            };
+  name: "Three View",
+  async beforeRegisterNodeDef(nodeType, nodeData, app) {
+    if (nodeType.comfyClass === "ThreeView") {
+      nodeType.prototype.onExecuted = async function (message) {
+        console.log("yooooo is running !!!!");
+      };
 
-            const onNodeCreated = nodeType.prototype.onNodeCreated;
+      const onNodeCreated = nodeType.prototype.onNodeCreated;
+      nodeType.prototype.onNodeCreated = async function () {
+        const r = onNodeCreated
+          ? onNodeCreated.apply(this, arguments)
+          : undefined;
 
-            nodeType.prototype.onNodeCreated = async function () {
+        const titleNode = await this.getTitle(); // new to load property node
+        const nodeId = this.id;
 
-                const r = onNodeCreated
-                  ? onNodeCreated.apply(this, arguments)
-                  : undefined;
+        const d = new Date();
+        const base_filename = `${
+          nodeData.name
+        }${nodeId}-${d.getUTCFullYear()}_${
+          d.getUTCMonth() + 1
+        }_${d.getUTCDate()}.png`;
 
-                const titleNode = await this.getTitle(); // new to load property node
-                const nodeId = this.id;
+        // Create widget
+        const widget = await widgetThreeJS(
+          this,
+          nodeData.name,
+          base_filename,
+          nodeData,
+          app
+        );
 
-                const d = new Date();
-                const base_filename = `ThreeJSNode${nodeId}-${d.getUTCFullYear()}_${
-                  d.getUTCMonth() + 1
-                }_${d.getUTCDate()}.png`;
+        this.title = `${this.type} [${widget.threeCanvas.size.w}x${widget.threeCanvas.size.h}]`;
+        return r;
+      };
 
-                // Create widget
-                widgetThreeJS(this, base_filename, nodeData, app);
+      // onConfigure, load serialized values
+      const onConfigure = nodeType.prototype.onConfigure;
+      nodeType.prototype.onConfigure = async function (w) {
+        onConfigure?.apply(this, arguments);
+        await this.getTitle(); // wait loaded node
 
-                return r;
-            };
-
+        if (w?.widgets_values?.length) {
+          const threeCanvasId = this.widgets.findIndex(
+            (wi) => wi.name === "threeCanvas"
+          );
+          if (threeCanvasId !== -1) {
+            this.widgets[threeCanvasId].value = w.widgets_values[threeCanvasId]; // set custom widget value, saves
+          }
         }
-    },
+      };
+
+      // When the node is executed we will be sent the input text, display this in the widget
+      /*const onExecuted = nodeType.prototype.onExecuted;
+        nodeType.prototype.onExecuted = function (message) {
+            console.log("yooooo");
+            //onExecuted?.apply(this, arguments); 
+            //populate.call(this, message.text);
+        };*/
+    }
+  },
 });
