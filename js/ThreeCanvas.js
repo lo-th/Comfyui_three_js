@@ -142,7 +142,7 @@ export class ThreeCanvas {
         this.camera.updateProjectionMatrix();
         this.node.title = `${this.node.type} [${this.size.w}x${this.size.h}]`;
         this.render();
-        
+
     }
 
     async update(widgetWidth, posY) {
@@ -155,6 +155,9 @@ export class ThreeCanvas {
 
     // Function send image to server
     async sendFileToServer(fileName) {
+
+        this.render();
+
         return new Promise((res) => {
             // Upload file image to server
             const uploadFile = async (blobFile) => {
@@ -178,7 +181,7 @@ export class ThreeCanvas {
                 }
             };
 
-            this.renderer.render(this.scene, this.camera);
+            //this.renderer.render(this.scene, this.camera);
             // Convert canvas toBlob object
             this.getDom().toBlob(async function (blob) {
                 let formData = new FormData();
