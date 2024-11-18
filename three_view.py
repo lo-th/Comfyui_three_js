@@ -38,7 +38,7 @@ import folder_paths
 
 # Global variables
 DEBUG = True
-WAIT_IMAGE_SAVE = False # Other method save image, send request to lth_save_image (in javascript) and wait complete save image to continue process generate
+WAIT_IMAGE_SAVE = True # Other method save image, send request to lth_save_image (in javascript) and wait complete save image to continue process generate
 THREEVIEW_DICT = {}  # ThreeView dict instances
 
 
