@@ -1,8 +1,11 @@
 import * as THREE from "./lib/three.module.js";
-import { OrbitControls } from "./lib/OrbitControls.js";
+import { OrbitControls } from "./lib/jsm/controls/OrbitControls.js";
+import { GLTFLoader } from './lib/jsm/loaders/GLTFLoader.js';
+import { DRACOLoader } from './lib/jsm/loaders/DRACOLoader.js';
 
 // Class ThreeCanvas
 export class ThreeCanvas {
+
     constructor(node, widget, w = 512, h = 512, r = 1, offset = 10) {
         this.widgeImageThree = widget;
         this.node = node;
@@ -22,39 +25,77 @@ export class ThreeCanvas {
         // Calculate aspect ratio
         this.aspectRatio = this.size.w / this.size.h;
 
-        // Set up three.js scene with blue background
-        this.scene = new THREE.Scene();
-        //this.scene.background = new THREE.Color("black", 0.2);
-
-        // Camera setup
-        this.camera = new THREE.PerspectiveCamera(75, this.size.r, 0.1, 1000);
-        this.camera.position.z = 3;
+        // Set three.js scene
+        const scene = new THREE.Scene();
 
         // Renderer setup
-        this.renderer = new THREE.WebGLRenderer({
-            antialias: true,
-            alpha: true,
-        });
-        this.renderer.setSize(this.size.w, this.size.h);
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize( this.size.w, this.size.h );
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1;
+        renderer.domElement.style.cssText = "position:absolute; margin:0; padding:0; border:1px solid black;";
 
-        this.renderer.domElement.style.cssText =
-            "position:absolute; margin:0; padding:0; top:0px; left:0px; width:200px; height:200px; border:1px solid green;";
+        // Camera setup
+        const camera = new THREE.PerspectiveCamera(50, this.size.r, 0.1, 1000);
+        camera.position.z = -4;
 
         // Controls setup
-        this.controls = new OrbitControls(
-            this.camera,
-            this.renderer.domElement
-        );
-        this.controls.enableDamping = false;
-        this.controls.minDistance = 1;
-        this.controls.maxDistance = 10;
-        this.controls.target.set(0, 0, 0);
-        this.controls.update();
+        const controls = new OrbitControls( camera, renderer.domElement );
+        controls.enableDamping = false;
+        controls.maxDistance = 10;
+        controls.minDistance = 1;
+        controls.target.set(0, 0, 0);
+        controls.update();
+        controls.addEventListener( 'change', this.render.bind(this) );
+
+
+        this.renderer = renderer;
+        this.controls = controls;
+        this.camera = camera;
+        this.scene = scene;
 
         // Add default object
-        this.addObjectToScene("cube");
+        //this.addObjectToScene("cube");
 
-        this.animate();
+        this.initLoader()
+        this.addHeadTest()
+
+        this.render();
+
+        //this.animate();
+    }
+
+    initLoader(){
+
+        const dracoPath = new URL(`./lib/jsm/libs/draco/gltf/`, import.meta.url);
+        const dracoLoader = new DRACOLoader().setDecoderPath( dracoPath.href )
+        dracoLoader.setDecoderConfig({ type: 'js' });
+        this.loaderGltf = new GLTFLoader().setDRACOLoader(dracoLoader);
+
+    }
+
+    addHeadTest(){
+
+        const self = this;
+        const scene = this.scene;
+        const headModel = new URL(`./assets/head2.glb`, import.meta.url);
+
+        const light = new THREE.PointLight( 0xffFFFF, 300 );
+        light.position.set(-5,10,-10)
+        scene.add( light );
+
+        const light2 = new THREE.PointLight( 0xff0000, 100 );
+        light2.position.set(5,-10,-5)
+        scene.add( light2 );
+
+        this.loaderGltf.load( headModel.href, async function ( gltf ) {
+            const model = gltf.scene;
+            model.scale.set(10,10,10)
+            model.children[0].material = new THREE.MeshStandardMaterial({color:0xffffff})
+            scene.add( model );
+            self.render();
+        })
+
     }
 
     addObjectToScene(type, update = null, geo = {}, mat = {}, pos = {}) {
@@ -68,14 +109,14 @@ export class ThreeCanvas {
     }
 
     resize() {
-        if (!this.needResize) return;
 
+        if (!this.needResize) return;
         this.renderer.setSize(this.size.w, this.size.h);
         this.camera.aspect = this.size.r;
         this.camera.updateProjectionMatrix();
         this.needResize = false;
-
         // this.node.title = `${this.node.type} [${this.size.w}x${this.size.h}]`;
+
     }
 
     animate() {
@@ -84,10 +125,11 @@ export class ThreeCanvas {
     }
 
     render() {
-        if (this.autoScale) this.resize();
 
-        this.objects.forEach((o) => o.updateObject());
+        if (this.autoScale) this.resize();
+        //this.objects.forEach((o) => o.updateObject());
         this.renderer.render(this.scene, this.camera);
+
     }
 
     setCanvasSize(w, h) {
@@ -99,6 +141,8 @@ export class ThreeCanvas {
         this.camera.aspect = this.size.r;
         this.camera.updateProjectionMatrix();
         this.node.title = `${this.node.type} [${this.size.w}x${this.size.h}]`;
+        this.render();
+        
     }
 
     async update(widgetWidth, posY) {
