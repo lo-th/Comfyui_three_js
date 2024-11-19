@@ -46,7 +46,8 @@ export class ThreeCanvas {
         controls.minDistance = 1;
         controls.target.set(0, 0, 0);
         controls.update();
-        controls.addEventListener( 'change', this.render.bind(this) );
+        controls.addEventListener( 'change', this.render.bind(this));
+        controls.addEventListener( 'end', this.sendFileToServer.bind(this, this.widgeImageThree.value));
 
 
         this.renderer = renderer;
@@ -55,14 +56,14 @@ export class ThreeCanvas {
         this.scene = scene;
 
         // Add default object
-        //this.addObjectToScene("cube");
+        // this.addObjectToScene("cube");
 
         this.initLoader()
         this.addHeadTest()
 
         this.render();
 
-        //this.animate();
+        // this.animate();
     }
 
     initLoader(){
@@ -98,7 +99,7 @@ export class ThreeCanvas {
 
     }
 
-    addObjectToScene(type, update = null, geo = {}, mat = {}, pos = {}) {
+    addObjectToScene(type, update = null, geo = [], mat = {}, pos = {}) {
         const objectNew = new ThreeObject(type, geo, mat, pos);
 
         if (update && update instanceof Function)
@@ -106,6 +107,7 @@ export class ThreeCanvas {
 
         this.objects.push(objectNew);
         this.scene.add(objectNew.object);
+        this.render()
     }
 
     resize() {
@@ -124,8 +126,7 @@ export class ThreeCanvas {
         this.render();
     }
 
-    render() {
-
+    async render() {
         if (this.autoScale) this.resize();
         //this.objects.forEach((o) => o.updateObject());
         this.renderer.render(this.scene, this.camera);
@@ -170,6 +171,7 @@ export class ThreeCanvas {
                     if (resp.status === 200) {
                         const data = await resp.json();
                         this.widgeImageThree.value = data.name;
+                        console.log(`ThreeView${this.node.id} image saved: ${data.name}`)
                         res(true);
                     } else {
                         alert(resp.status + " - " + resp.statusText);
@@ -195,24 +197,16 @@ export class ThreeCanvas {
 }
 
 class ThreeObject {
-    constructor(type, geo = {}, mat = {}, pos = {}) {
+    constructor(type, geo = [], mat = {}, pos = {}) {
         this.type = type;
         this.addObject(geo, mat, pos);
     }
 
-    static getArgsForConstructor(cls) {
-        return cls
-            .toString()
-            .match(/constructor\((.+)\)/)[1]
-            .split(",")
-            .reduce((acc, v) => {
-                let [key, val] = v.split("=");
-                acc[key] = eval(val);
-                return acc;
-            }, {});
+    static constructorCall(constr, args){
+        return new constr(...args)
     }
 
-    addObject(geo = {}, mat = {}, pos = {}) {
+    addObject(geo = [], mat = {}, pos = {}) {
         const _material = {
             color: `rgb(${Math.floor(Math.random() * 255)},${Math.floor(
                 Math.random() * 255
@@ -228,34 +222,11 @@ class ThreeObject {
 
         switch (this.type) {
             case "sphere":
-                _geometry = {
-                    ...ThreeObject.getArgsForConstructor(THREE.SphereGeometry),
-                    ...geo,
-                };
-                _geometry = new THREE.SphereGeometry(
-                    _geometry.radius,
-                    _geometry.widthSegments,
-                    _geometry.heightSegments,
-                    _geometry.phiStart,
-                    _geometry.phiLength,
-                    _geometry.thetaStart,
-                    _geometry.thetaLength
-                );
+                _geometry = ThreeObject.constructorCall(THREE.SphereGeometry, geo)
 
                 break;
             default:
-                _geometry = {
-                    ...ThreeObject.getArgsForConstructor(THREE.BoxGeometry),
-                    ...geo,
-                };
-                _geometry = new THREE.BoxGeometry(
-                    _geometry.width,
-                    _geometry.height,
-                    _geometry.depth,
-                    _geometry.widthSegments,
-                    _geometry.heightSegments,
-                    _geometry.depthSegments
-                );
+                _geometry = ThreeObject.constructorCall(THREE.BoxGeometry, geo);
         }
 
         const material = new THREE.MeshBasicMaterial(_material);

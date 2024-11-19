@@ -56,11 +56,7 @@ async function widgetThreeJS(node, nodeName, base_filename, inputData, app) {
                             function () {
                                 this.object.rotation.z += 0.01;
                             },
-                            {
-                                radius: 0.5,
-                                widthSegments: 6,
-                                heightSegments: 6,
-                            },
+                            [0.5, 6, 6],
                             { color: "red" }
                         ),
                 }),
