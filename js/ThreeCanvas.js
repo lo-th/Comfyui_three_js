@@ -49,6 +49,12 @@ export class ThreeCanvas {
         controls.addEventListener( 'change', this.render.bind(this));
         controls.addEventListener( 'end', this.sendFileToServer.bind(this, this.widgeImageThree.value));
 
+        // drop model direcly on view
+        document.body.addEventListener( 'dragover', function(e){ e.preventDefault() }, false );
+        document.body.addEventListener( 'dragend', function(e){ e.preventDefault() }, false );
+        document.body.addEventListener( 'dragleave', function(e){ e.preventDefault()}, false );
+        document.body.addEventListener( 'drop', this.drop.bind(this), false );
+
 
         this.renderer = renderer;
         this.controls = controls;
@@ -75,6 +81,39 @@ export class ThreeCanvas {
 
     }
 
+    drop( e ){
+
+        e.preventDefault();
+        const file = e.dataTransfer.files[0];
+        const reader = new FileReader();
+        const name = file.name;
+        const type = name.substring(name.lastIndexOf('.')+1, name.length );
+        const finalName = name.substring( name.lastIndexOf('/')+1, name.lastIndexOf('.') );
+        reader.readAsArrayBuffer( file );
+
+        if( type==='glb' ) e.stopPropagation()
+
+        reader.onload = function ( e ) {
+            if( type==='glb' ) this.directGlb( e.target.result, finalName )
+        }.bind(this);
+
+    }
+
+    directGlb( data, name ){
+
+        const self = this;
+        const scene = this.scene;
+
+        this.loaderGltf.parse( data, '', function ( glb ) {
+            if(this.model) this.scene.remove(this.model);
+            const model = glb.scene;
+            scene.add( model );
+            self.model = model;
+            self.render();
+        }.bind(this))
+
+    }
+
     addHeadTest(){
 
         const self = this;
@@ -89,11 +128,16 @@ export class ThreeCanvas {
         light2.position.set(5,-10,-5)
         scene.add( light2 );
 
+        const light3 = new THREE.PointLight( 0x00FFFF, 100 );
+        light3.position.set(0,5,5)
+        scene.add( light3 );
+
         this.loaderGltf.load( headModel.href, async function ( gltf ) {
             const model = gltf.scene;
             model.scale.set(10,10,10)
             model.children[0].material = new THREE.MeshStandardMaterial({color:0xffffff})
             scene.add( model );
+            self.model = model;
             self.render();
         })
 
