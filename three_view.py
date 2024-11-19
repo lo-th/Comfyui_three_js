@@ -89,7 +89,7 @@ class ThreeView:
                 self.savedimage = False
                 return True
 
-            await asyncio.sleep(0.1)
+            await asyncio.sleep(0.3)
 
         return False
 
