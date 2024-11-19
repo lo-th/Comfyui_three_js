@@ -12,21 +12,27 @@ const DEBUG = true;
 async function widgetThreeJS(node, nodeName, base_filename, inputData, app) {
     // Find widget stored image filename for threejs, and hide him.
     const widgeImageThree = node.widgets.find((w) => w.name === "imageThreejs");
-    widgeImageThree.value = base_filename;
-    widgeImageThree.type = "converted-widget";
+    widgeImageThree.value = base_filename
+    // widgeImageThree.type = "converted-widget";
 
-    widgeImageThree.computeSize = () => [0, -4];
-    if (widgeImageThree.linkedWidgets) {
-        for (const link of widgeImageThree.linkedWidgets) {
-            link.type = "converted-widget";
-            link.computeSize = () => [0, -4];
-        }
-    }
+    // widgeImageThree.computeSize = () => [0, -4];
+    // if (widgeImageThree.linkedWidgets) {
+    //     for (const link of widgeImageThree.linkedWidgets) {
+    //         link.type = "converted-widget";
+    //         link.computeSize = () => [0, -4];
+    //     }
+    // }
 
     let widget = {};
 
-    const threeCanvas = new ThreeCanvas(node, widgeImageThree);
-    threeCanvas.init();
+    let splitVal = widgeImageThree.value.split(",")
+
+    const threeCanvas1 = new ThreeCanvas(node, widgeImageThree, 0);
+    threeCanvas1.init();
+    const threeCanvas2 = new ThreeCanvas(node, widgeImageThree, 1);
+    threeCanvas2.init();
+    const threeCanvas3 = new ThreeCanvas(node, widgeImageThree, 2);
+    threeCanvas3.init();
 
     // Add panel widget
     const panelWrapper = $el("div.threeCanvasPanelWrapper", {}, [
@@ -51,7 +57,7 @@ async function widgetThreeJS(node, nodeName, base_filename, inputData, app) {
                     },
                     textContent: "Add",
                     onclick: (e) =>
-                        threeCanvas.addObjectToScene(
+                        threeCanvas1.addObjectToScene(
                             "sphere",
                             function () {
                                 this.object.rotation.z += 0.01;
@@ -75,14 +81,14 @@ async function widgetThreeJS(node, nodeName, base_filename, inputData, app) {
                     textContent: "Canvas size",
                     onclick: (e) => {
                         try {
-                            let w = +prompt("Widht:", threeCanvas.size.w);
-                            let h = +prompt("Height:", threeCanvas.size.h);
+                            let w = +prompt("Widht:", threeCanvas1.size.w);
+                            let h = +prompt("Height:", threeCanvas1.size.h);
 
                             // Simple check...
-                            if (!w || w <= 0) w = threeCanvas.size.w;
-                            if (!h || h <= 0) h = threeCanvas.size.h;
+                            if (!w || w <= 0) w = threeCanvas1.size.w;
+                            if (!h || h <= 0) h = threeCanvas1.size.h;
 
-                            if (w) threeCanvas.setCanvasSize(w, h);
+                            if (w) threeCanvas1.setCanvasSize(w, h);
                             widget?.callback();
                             app.graph.setDirtyCanvas(true, false);
                         } catch (error) {
@@ -113,10 +119,10 @@ async function widgetThreeJS(node, nodeName, base_filename, inputData, app) {
 
     // Add widget threeCanvas
     // const dom = threeCanvas.getDom();
-    const threeWrapper = $el("div.threeWrapper", {}, [threeCanvas.getDom()]);
+    const threeWrapper = $el("div.threeWrapper", {}, [threeCanvas1.getDom(),threeCanvas2.getDom(),threeCanvas3.getDom()]);
     widget = node.addDOMWidget("threeCanvas", "custom_widget", threeWrapper, {
         getValue() {
-            return { size: threeCanvas.size };
+            return { size: threeCanvas1.size };
         },
         // setValue(v) {
         //   widget.value = v;
@@ -129,13 +135,25 @@ async function widgetThreeJS(node, nodeName, base_filename, inputData, app) {
         const [ctx, nodeThree, widgetWidth, posY] = arguments;
         // nodeThree.size[1] = posY + threeCanvas.size.h + threeCanvas.size.offset;
 
-        const w = widgetWidth - 25;
+        const w = (widgetWidth - 25)/2;
 
-        const aspect_ratio = this.threeCanvas.size.h / this.threeCanvas.size.w;
+        const aspect_ratio = threeCanvas1.size.h / threeCanvas1.size.w;
 
-        Object.assign(this.threeCanvas.getDom().style, {
+        Object.assign(threeCanvas1.getDom().style, {
             width: w + "px",
             height: w * aspect_ratio + "px",
+        });
+
+        Object.assign(threeCanvas2.getDom().style, {
+            width: w + "px",
+            height: w * aspect_ratio + "px",
+            left: w + 10 + "px"
+        });
+        Object.assign(threeCanvas3.getDom().style, {
+            width: w + "px",
+            height: w * aspect_ratio + "px",
+            top: w + 10 + "px"
+
         });
 
         // Update renderer
@@ -143,10 +161,10 @@ async function widgetThreeJS(node, nodeName, base_filename, inputData, app) {
         //app.graph.setDirtyCanvas(true, false);
     };
 
-    widget.threeCanvas = threeCanvas;
+    widget.threeCanvas = threeCanvas1;
     widget.threeWrapper = threeWrapper;
     widget.callback = () => {
-        threeWrapper.value = threeCanvas.size;
+        threeWrapper.value = threeCanvas1.size;
     };
 
     // Note: If the node is collapsed, the draw method does not work and the canvas will not update.
@@ -159,11 +177,12 @@ async function widgetThreeJS(node, nodeName, base_filename, inputData, app) {
     // requestAnimationFrame(animator);
     node.onResize = function () {
         let [w, h] = this.size;
+
         let aspect_ratio = 1;
 
-        aspect_ratio = threeCanvas.size.h / threeCanvas.size.w;
+        aspect_ratio = threeCanvas1.size.h / threeCanvas1.size.w;
 
-        const buffer = 80;
+        const buffer = 140;
 
         if (w > 1024) w = w - (w - 1024);
         if (w < 200) w = 200;
@@ -199,7 +218,7 @@ async function widgetThreeJS(node, nodeName, base_filename, inputData, app) {
         const { unique_id } = detail;
         if (+unique_id !== node.id) return;
 
-        await threeCanvas
+        await threeCanvas1
             .sendFileToServer(widgeImageThree.value)
             .then(async (result) => {
                 if (result) {
@@ -223,7 +242,10 @@ async function widgetThreeJS(node, nodeName, base_filename, inputData, app) {
             .catch((err) => DEBUG && console.error(`Error save image: ${err}`));
     });
 
-    await threeCanvas.sendFileToServer(widgeImageThree.value);
+    splitVal.forEach(async(element) => {
+        await threeCanvas1.sendFileToServer(element);   
+    });
+
 
     return widget;
 }
@@ -246,17 +268,23 @@ app.registerExtension({
                 const nodeId = this.id;
 
                 const d = new Date();
-                const base_filename = `${
+                
+                const base_filename = [1,2,3].map((v)=>`${
                     nodeData.name
                 }${nodeId}-${d.getUTCFullYear()}_${
                     d.getUTCMonth() + 1
-                }_${d.getUTCDate()}.png`;
+                }_${d.getUTCDate()}_${v}.png`)
+                // const base_filename = `${
+                //     nodeData.name
+                // }${nodeId}-${d.getUTCFullYear()}_${
+                //     d.getUTCMonth() + 1
+                // }_${d.getUTCDate()}.png`;
 
                 // Create widget
                 const widget = await widgetThreeJS(
                     this,
                     nodeData.name,
-                    base_filename,
+                    base_filename.join(),
                     nodeData,
                     app
                 );

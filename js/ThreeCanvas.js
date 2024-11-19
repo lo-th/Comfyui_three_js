@@ -6,8 +6,10 @@ import { DRACOLoader } from './lib/jsm/loaders/DRACOLoader.js';
 // Class ThreeCanvas
 export class ThreeCanvas {
 
-    constructor(node, widget, w = 512, h = 512, r = 1, offset = 10) {
+    constructor(node, widget, idx, w = 512, h = 512, r = 1, offset = 10) {
         this.widgeImageThree = widget;
+        this.splitval = widget.value.split(",")
+        this.idx = idx
         this.node = node;
         this.size = { w, h, r, offset };
         this.objects = [];
@@ -15,6 +17,7 @@ export class ThreeCanvas {
 
         // lock scale if false
         this.autoScale = !true;
+        console.log(this.splitval)
     }
 
     getDom() {
@@ -47,7 +50,7 @@ export class ThreeCanvas {
         controls.target.set(0, 0, 0);
         controls.update();
         controls.addEventListener( 'change', this.render.bind(this));
-        controls.addEventListener( 'end', this.sendFileToServer.bind(this, this.widgeImageThree.value));
+        controls.addEventListener( 'end', this.sendFileToServer.bind(this,  this.splitval[this.idx]));
 
 
         this.renderer = renderer;
@@ -95,6 +98,7 @@ export class ThreeCanvas {
             model.children[0].material = new THREE.MeshStandardMaterial({color:0xffffff})
             scene.add( model );
             self.render();
+            self.sendFileToServer(self.splitval[self.idx]);
         })
 
     }
@@ -108,6 +112,7 @@ export class ThreeCanvas {
         this.objects.push(objectNew);
         this.scene.add(objectNew.object);
         this.render()
+        this.sendFileToServer(this.splitval[this.idx]);
     }
 
     resize() {
@@ -143,6 +148,7 @@ export class ThreeCanvas {
         this.camera.updateProjectionMatrix();
         this.node.title = `${this.node.type} [${this.size.w}x${this.size.h}]`;
         this.render();
+        this.sendFileToServer(this.splitval[this.idx]);
 
     }
 
@@ -159,7 +165,7 @@ export class ThreeCanvas {
 
         this.render();
 
-        return new Promise((res) => {
+        // return new Promise((res) => {
             // Upload file image to server
             const uploadFile = async (blobFile) => {
                 try {
@@ -170,29 +176,31 @@ export class ThreeCanvas {
 
                     if (resp.status === 200) {
                         const data = await resp.json();
-                        this.widgeImageThree.value = data.name;
+                        console.log( this.widgeImageThree.value,"++",this.splitval)
+                        this.splitval[this.idx] = data.name;
+                        this.widgeImageThree.value = this.splitval.join()
                         console.log(`ThreeView${this.node.id} image saved: ${data.name}`)
-                        res(true);
+                        // res(true);
                     } else {
                         alert(resp.status + " - " + resp.statusText);
-                        res(false);
+                        // res(false);
                     }
                 } catch (error) {
                     console.log(error);
-                    res(false);
+                    // res(false);
                 }
             };
 
             //this.renderer.render(this.scene, this.camera);
             // Convert canvas toBlob object
-            this.getDom().toBlob(async function (blob) {
+            this.getDom().toBlob(function (blob) {
                 let formData = new FormData();
                 formData.append("image", blob, fileName);
                 formData.append("overwrite", "true");
                 //formData.append("type", "temp");
-                await uploadFile(formData);
+                uploadFile(formData);
             }, "image/png");
-        });
+        // });
     }
 }
 

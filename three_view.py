@@ -38,7 +38,7 @@ import folder_paths
 
 # Global variables
 DEBUG = True
-WAIT_IMAGE_SAVE = True # Other method save image, send request to lth_save_image (in javascript) and wait complete save image to continue process generate
+WAIT_IMAGE_SAVE = False # Other method save image, send request to lth_save_image (in javascript) and wait complete save image to continue process generate
 THREEVIEW_DICT = {}  # ThreeView dict instances
 
 
@@ -61,7 +61,7 @@ class ThreeView:
 
         return {
         "required": {
-            "imageThreejs": ("STRING", {"default": "theejs_image.png"})
+            "imageThreejs": ("STRING", {"default":"theejs_image1.png,theejs_image2.png,theejs_image3.png"},)
         },
         "hidden": { "unique_id":"UNIQUE_ID" }
         }
@@ -69,16 +69,16 @@ class ThreeView:
 
     @classmethod
     def IS_CHANGED(self, imageThreejs, unique_id):
-        image_path = folder_paths.get_annotated_filepath(imageThreejs)
-        m = hashlib.sha256()
-        with open(image_path, "rb") as f:
-            m.update(f.read())
+        # image_path = folder_paths.get_annotated_filepath(imageThreejs)
+        # m = hashlib.sha256()
+        # with open(image_path, "rb") as f:
+        #     m.update(f.read())
 
-        return m.digest().hex()
+        return float("NaN") #m.digest().hex()
 
 
-    RETURN_TYPES = ("IMAGE",)
-    RETURN_NAMES = ("image",)
+    RETURN_TYPES = ("IMAGE","IMAGE","IMAGE",)
+    RETURN_NAMES = ("image1","image2","image3")
     FUNCTION = "process_three_js_image"
     CATEGORY = "lth"
 
@@ -89,7 +89,7 @@ class ThreeView:
                 self.savedimage = False
                 return True
 
-            await asyncio.sleep(0.3)
+            await asyncio.sleep(0.1)
 
         return False
 
@@ -110,15 +110,36 @@ class ThreeView:
             else:
                 if DEBUG:
                     print(f"ThreeView {unique_id}: save completed!")        
+        
+        # images_make = []
+        # for imageName in imageThreejs:
+        imageThreejs = imageThreejs.split(",")
+        pathImage1 = folder_paths.get_annotated_filepath(imageThreejs[0])
+        i1 = Image.open(pathImage1)
+        i1 = ImageOps.exif_transpose(i1)
+        image1 = i1.convert("RGB")
+        image1 = np.array(image1).astype(np.float32) / 255.0
+        image1 = torch.from_numpy(image1)[None,]
 
-        pathImage = folder_paths.get_annotated_filepath(imageThreejs)
-        i = Image.open(pathImage)
-        i = ImageOps.exif_transpose(i)
-        image = i.convert("RGB")
-        image = np.array(image).astype(np.float32) / 255.0
-        image = torch.from_numpy(image)[None,]
+        pathImage2 = folder_paths.get_annotated_filepath(imageThreejs[1])
+        i2 = Image.open(pathImage2)
+        i2 = ImageOps.exif_transpose(i2)
+        image2 = i2.convert("RGB")
+        image2 = np.array(image2).astype(np.float32) / 255.0
+        image2 = torch.from_numpy(image2)[None,]
 
-        return (image,)
+        pathImage3 = folder_paths.get_annotated_filepath(imageThreejs[2])
+        i3 = Image.open(pathImage3)
+        i3 = ImageOps.exif_transpose(i3)
+        image3 = i3.convert("RGB")
+        image3 = np.array(image3).astype(np.float32) / 255.0
+        image3 = torch.from_numpy(image3)[None,]
+
+
+      
+
+
+        return (image1,image2,image3)
 
 
 NODE_CLASS_MAPPINGS = {
