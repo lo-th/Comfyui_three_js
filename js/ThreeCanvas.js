@@ -22,7 +22,7 @@ export class ThreeCanvas {
     }
 
     init(views3 = false) {
-        this.VIEWS3 = views3
+        this.VIEWS3 = true//views3
         // Calculate aspect ratio
         this.aspectRatio = this.size.w / this.size.h;
 
@@ -57,7 +57,7 @@ export class ThreeCanvas {
         renderer3.domElement.classList.add("threeview_renderer")               
 
         // Camera setup 1
-        const camera1 = new THREE.PerspectiveCamera(50, this.size.r, 0.1, 1000);
+        const camera1 = new THREE.PerspectiveCamera(50, this.size.r, 2, 10);
         camera1.lookAt(0, 0, 0);
         camera1.position.set(-4, 0, 0); // left
         
@@ -80,9 +80,13 @@ export class ThreeCanvas {
         controls1.update();
         controls1.addEventListener( 'change', this.render.bind(this));
 
+
+        const depthMaterial = new THREE.MeshDepthMaterial()
+        const linesMaterial = new THREE.MeshBasicMaterial({ color:0xFFFFFF, wireframe:true});
+
         // Renderers
         this.tools = [
-            { renderer: renderer1, camera: camera1, controls: controls1 },
+            { renderer: renderer1, camera: camera1, controls: controls1, material:null },
         ];
 
         if(this.VIEWS3){
@@ -93,7 +97,9 @@ export class ThreeCanvas {
             controls2.minDistance = 1;
             controls2.target.set(0, 0, 0);
             controls2.update();
-            controls2.addEventListener( 'change', this.render.bind(this));        
+            controls2.addEventListener( 'change', this.render.bind(this)); 
+
+                   
    
             // Controls setup
             const controls3 = new OrbitControls( camera3, renderer3.domElement );
@@ -104,8 +110,13 @@ export class ThreeCanvas {
             controls3.update();
             controls3.addEventListener( 'change', this.render.bind(this)); 
 
-            this.tools.push({ renderer: renderer2, camera: camera2, controls: controls2 });
-            this.tools.push({ renderer: renderer3, camera: camera3, controls: controls3 });
+             
+
+            this.tools.push({ renderer: renderer2, camera: camera2, controls: controls2, material:depthMaterial });
+            this.tools.push({ renderer: renderer3, camera: camera3, controls: controls3, material:linesMaterial });
+        } else {
+            this.tools.push({ material:depthMaterial });
+            this.tools.push({ material:linesMaterial });
         }
 
 //         const controls = new OrbitControls( camera, renderer.domElement );
@@ -123,10 +134,9 @@ export class ThreeCanvas {
 //         document.body.addEventListener( 'dragleave', function(e){ e.preventDefault()}, false );
 //         document.body.addEventListener( 'drop', this.drop.bind(this), false );
 
-
-//         this.renderer = renderer;
-//         this.controls = controls;
-//         this.camera = camera;
+        this.renderer = renderer1;
+        this.controls = controls1;
+        this.camera = camera1;
 
         this.scene = scene;
 
@@ -240,7 +250,12 @@ export class ThreeCanvas {
 
     async render() {
         if (this.autoScale) this.resize();
-        this.tools.forEach((data)=>data.renderer.render(this.scene, data.camera))
+        //this.tools.forEach((data)=>data.renderer.render(this.scene, data.camera))
+
+        this.tools.forEach((data)=>{
+            this.scene.overrideMaterial = !data.material ? null: data.material; 
+            return data.renderer.render(this.scene, this.camera)
+        })
 
     }
 
