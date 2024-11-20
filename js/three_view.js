@@ -7,12 +7,13 @@ import { $el } from "../../scripts/ui.js";
 import { ThreeCanvas } from "./ThreeCanvas.js";
 
 const DEBUG = true;
+const VIEWS3 = false
 
 // Function create widget
 async function widgetThreeJS(node, nodeData, inputData, app) {
     const d = new Date();
                 
-    const base_filenames = [1,2,3].map((v)=>`${nodeData.name}${node.id}-${d.getUTCFullYear()}_${d.getUTCMonth() + 1}_${d.getUTCDate()}_${v}.png`)
+    const base_filenames = ["image", "lines","depth"].map((v)=>`${nodeData.name}${node.id}-${d.getUTCFullYear()}_${d.getUTCMonth() + 1}_${d.getUTCDate()}_${v}.png`)
 
     // Find widget stored image filename for threejs, and hide him.
     const widgeImageThree = node.widgets.find((w) => w.name === "imageThreejs");
@@ -29,7 +30,7 @@ async function widgetThreeJS(node, nodeData, inputData, app) {
 
     let widget = {};
     const threeCanvas = new ThreeCanvas(node, widgeImageThree);
-    threeCanvas.init();
+    threeCanvas.init(VIEWS3);
 
     // Add panel widget
     const panelWrapper = $el("div.threeCanvasPanelWrapper", {}, [
@@ -116,8 +117,13 @@ async function widgetThreeJS(node, nodeData, inputData, app) {
     };
     // end - Panel
 
+    let domsRenders = [threeCanvas.getDom()]
+    if ( VIEWS3 ) {
+        domsRenders = [threeCanvas.getDom(), threeCanvas.getDom(1),threeCanvas.getDom(2)]
+    }
+
     // Add widget threeCanvas
-    const threeWrapper = $el("div.threeWrapper", {}, [threeCanvas.getDom(),threeCanvas.getDom(1),threeCanvas.getDom(2)]);
+    const threeWrapper = $el("div.threeWrapper", {}, domsRenders);
     widget = node.addDOMWidget("threeCanvas", "custom_widget", threeWrapper, {
         getValue() {
             return { size: threeCanvas.size };
@@ -132,7 +138,7 @@ async function widgetThreeJS(node, nodeData, inputData, app) {
         origDraw?.apply(this, arguments);
 
         const [ctx, nodeThree, widgetWidth, posY] = arguments;
-        const w = (widgetWidth - 25)/2;
+        const w = !VIEWS3 ? widgetWidth - 25: (widgetWidth - 25)/2;
         const aspect_ratio = threeCanvas.size.h / threeCanvas.size.w;
 
         Object.assign(threeCanvas.getDom().style, {
@@ -140,18 +146,21 @@ async function widgetThreeJS(node, nodeData, inputData, app) {
             height: w * aspect_ratio + "px",
         });
 
-        Object.assign(threeCanvas.getDom(1).style, {
-            width: w + "px",
-            height: w * aspect_ratio + "px",
-            left: w + 10 + "px"
-        });
+        if( VIEWS3 ){
+            Object.assign(threeCanvas.getDom(1).style, {
+                width: w + "px",
+                height: w * aspect_ratio + "px",
+                left: w + 10 + "px"
+            });
 
-        Object.assign(threeCanvas.getDom(2).style, {
-            width: w + "px",
-            height: w * aspect_ratio + "px",
-            top: parseFloat(threeCanvas.getDom().style.height) + 10 + "px"
+            Object.assign(threeCanvas.getDom(2).style, {
+                width: w + "px",
+                height: w * aspect_ratio + "px",
+                top: parseFloat(threeCanvas.getDom().style.height) + 10 + "px"
 
-        });
+            });
+        }
+
 
         // Update renderer
         // threeCanvas.update(node.size[0]);
@@ -282,7 +291,7 @@ app.registerExtension({
                         (wi) => wi.name === "threeCanvas"
                     );
 
-                    if (threeCanvasId !== -1) {
+                    if (threeCanvasId !== -1 && w?.widgets_values[threeCanvasId]) {
                         // this.widgets[threeCanvasId].value =
                         //     w.widgets_values[threeCanvasId]; // set custom widget value, saves
 

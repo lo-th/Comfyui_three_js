@@ -21,7 +21,8 @@ export class ThreeCanvas {
         return this.tools[idx].renderer.domElement;
     }
 
-    init() {
+    init(views3 = false) {
+        this.VIEWS3 = views3
         // Calculate aspect ratio
         this.aspectRatio = this.size.w / this.size.h;
 
@@ -79,31 +80,33 @@ export class ThreeCanvas {
         controls1.update();
         controls1.addEventListener( 'change', this.render.bind(this));
 
-        // Controls setup
-        const controls2 = new OrbitControls(  camera2, renderer2.domElement );
-        controls2.enableDamping = false;
-        controls2.maxDistance = 10;
-        controls2.minDistance = 1;
-        controls2.target.set(0, 0, 0);
-        controls2.update();
-        controls2.addEventListener( 'change', this.render.bind(this));        
-   
-        // Controls setup
-        const controls3 = new OrbitControls( camera3, renderer3.domElement );
-        controls3.enableDamping = false;
-        controls3.maxDistance = 10;
-        controls3.minDistance = 1;
-        controls3.target.set(0, 0, 0);
-        controls3.update();
-        controls3.addEventListener( 'change', this.render.bind(this));           
-
         // Renderers
         this.tools = [
             { renderer: renderer1, camera: camera1, controls: controls1 },
-            { renderer: renderer2, camera: camera2, controls: controls2 },
-            { renderer: renderer3, camera: camera3, controls: controls3 }
         ];
 
+        if(this.VIEWS3){
+        // Controls setup
+            const controls2 = new OrbitControls(  camera2, renderer2.domElement );
+            controls2.enableDamping = false;
+            controls2.maxDistance = 10;
+            controls2.minDistance = 1;
+            controls2.target.set(0, 0, 0);
+            controls2.update();
+            controls2.addEventListener( 'change', this.render.bind(this));        
+   
+            // Controls setup
+            const controls3 = new OrbitControls( camera3, renderer3.domElement );
+            controls3.enableDamping = false;
+            controls3.maxDistance = 10;
+            controls3.minDistance = 1;
+            controls3.target.set(0, 0, 0);
+            controls3.update();
+            controls3.addEventListener( 'change', this.render.bind(this)); 
+
+            this.tools.push({ renderer: renderer2, camera: camera2, controls: controls2 });
+            this.tools.push({ renderer: renderer3, camera: camera3, controls: controls3 });
+        }
 
 //         const controls = new OrbitControls( camera, renderer.domElement );
 //         controls.enableDamping = false;
@@ -270,7 +273,9 @@ export class ThreeCanvas {
     // Function send image to server
     async sendFileToServer(fileName, idx) {
         this.render();
-    
+        
+        if(!this.VIEWS3) idx = 0
+        
         return new Promise((res) => {
             const uploadFile = async (blobFile) => {
                 try {
