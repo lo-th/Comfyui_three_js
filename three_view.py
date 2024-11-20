@@ -77,7 +77,7 @@ class ThreeView:
     def INPUT_TYPES(self):
         return {
         "required": {
-            "imageThreejs": ("STRING", {"default":"theejs_image1.png,theejs_image2.png,theejs_image3.png"},)
+            "imageThreejs": ("STRING", {"default":"theejs_image.png,theejs_image_lines.png,theejs_image_depth.png"},)
         },
         "hidden": { "unique_id":"UNIQUE_ID" }
         }
@@ -97,7 +97,7 @@ class ThreeView:
 
 
     RETURN_TYPES = ("IMAGE","IMAGE","IMAGE",)
-    RETURN_NAMES = ("image1","image2","image3")
+    RETURN_NAMES = ("image", "lines", "depth")
     FUNCTION = "process_three_js_image"
     CATEGORY = "lth"
 
