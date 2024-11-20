@@ -108,6 +108,26 @@ export class ThreeCanvas {
             this.tools.push({ renderer: renderer3, camera: camera3, controls: controls3 });
         }
 
+//         const controls = new OrbitControls( camera, renderer.domElement );
+//         controls.enableDamping = false;
+//         controls.maxDistance = 10;
+//         controls.minDistance = 1;
+//         controls.target.set(0, 0, 0);
+//         controls.update();
+//         controls.addEventListener( 'change', this.render.bind(this));
+//         controls.addEventListener( 'end', this.sendFileToServer.bind(this, this.widgeImageThree.value));
+
+//         // drop model direcly on view
+//         document.body.addEventListener( 'dragover', function(e){ e.preventDefault() }, false );
+//         document.body.addEventListener( 'dragend', function(e){ e.preventDefault() }, false );
+//         document.body.addEventListener( 'dragleave', function(e){ e.preventDefault()}, false );
+//         document.body.addEventListener( 'drop', this.drop.bind(this), false );
+
+
+//         this.renderer = renderer;
+//         this.controls = controls;
+//         this.camera = camera;
+
         this.scene = scene;
 
         // Add default object
@@ -130,8 +150,40 @@ export class ThreeCanvas {
 
     }
 
-    addHeadTest(url = `./assets/head2.glb`){
+    drop( e ){
 
+        e.preventDefault();
+        const file = e.dataTransfer.files[0];
+        const reader = new FileReader();
+        const name = file.name;
+        const type = name.substring(name.lastIndexOf('.')+1, name.length );
+        const finalName = name.substring( name.lastIndexOf('/')+1, name.lastIndexOf('.') );
+        reader.readAsArrayBuffer( file );
+
+        if( type==='glb' ) e.stopPropagation()
+
+        reader.onload = function ( e ) {
+            if( type==='glb' ) this.directGlb( e.target.result, finalName )
+        }.bind(this);
+
+    }
+
+    directGlb( data, name ){
+
+        const self = this;
+        const scene = this.scene;
+
+        this.loaderGltf.parse( data, '', function ( glb ) {
+            if(this.model) this.scene.remove(this.model);
+            const model = glb.scene;
+            scene.add( model );
+            self.model = model;
+            self.render();
+        }.bind(this))
+
+    }
+
+    addHeadTest(url = `./assets/head2.glb`){
         const self = this;
         const scene = this.scene;
         const headModel = new URL(url, import.meta.url);
@@ -143,6 +195,10 @@ export class ThreeCanvas {
         const light2 = new THREE.PointLight( 0xff0000, 100 );
         light2.position.set(5,-10,-5)
         scene.add( light2 );
+
+        const light3 = new THREE.PointLight( 0x00FFFF, 100 );
+        light3.position.set(0,5,5)
+        scene.add( light3 );
 
         this.loaderGltf.load( headModel.href, async function ( gltf ) {
             self.addObjectToScene( "model", { update: null, geo: gltf.scene, mat: {color:0xffffff}, scale: {x: 10, y: 10, z: 10}} );
