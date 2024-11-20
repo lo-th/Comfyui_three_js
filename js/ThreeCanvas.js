@@ -180,7 +180,7 @@ export class ThreeCanvas {
 
     }
 
-    addHeadTest((url = `./assets/head2.glb`){
+    addHeadTest(url = `./assets/head2.glb`){
         const self = this;
         const scene = this.scene;
         const headModel = new URL(url, import.meta.url);
