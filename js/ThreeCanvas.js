@@ -65,14 +65,14 @@ export class ThreeCanvas {
         camera1.position.set(-4, 0, 0); // left
         
         // Camera setup 2        
-        const camera2 = new THREE.PerspectiveCamera(50, this.size.r, 0.1, 1000);
+        /*const camera2 = new THREE.PerspectiveCamera(50, this.size.r, 0.1, 1000);
         camera2.position.set(0, -4, 0); // top
         camera2.lookAt(0, 0, 0);
 
         // Camera setup 3        
         const camera3 = new THREE.PerspectiveCamera(50, this.size.r, 0.1, 1000);
         camera3.position.set(0, 0, -4); // front
-        camera3.lookAt(0, 0, 0);
+        camera3.lookAt(0, 0, 0);*/
 
         // Controls setup
         const controls1 = new OrbitControls( camera1, renderer1.domElement );
@@ -130,7 +130,7 @@ export class ThreeCanvas {
 
         if(this.VIEWS3){
         // Controls setup
-            const controls2 = new OrbitControls(  camera2, renderer2.domElement );
+            /*const controls2 = new OrbitControls(  camera2, renderer2.domElement );
             controls2.enableDamping = false;
             controls2.maxDistance = 10;
             controls2.minDistance = 1;
@@ -147,12 +147,12 @@ export class ThreeCanvas {
             controls3.minDistance = 1;
             controls3.target.set(0, 0, 0);
             controls3.update();
-            controls3.addEventListener( 'change', this.render.bind(this)); 
+            controls3.addEventListener( 'change', this.render.bind(this)); */
 
              
 
-            this.tools.push({ type:'lines', renderer: renderer2, camera: camera2, controls: controls2, material:null });
-            this.tools.push({ type:'depth', renderer: renderer3, camera: camera3, controls: controls3, material:depthMaterial });
+            this.tools.push({ type:'lines', renderer: renderer2, material:null });
+            this.tools.push({ type:'depth', renderer: renderer3, material:depthMaterial });
         } 
 
 //         const controls = new OrbitControls( camera, renderer.domElement );
