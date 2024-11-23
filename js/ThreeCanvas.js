@@ -2,7 +2,8 @@ import * as THREE from "./lib/three.module.js";
 import { OrbitControls } from "./lib/jsm/controls/OrbitControls.js";
 import { GLTFLoader } from './lib/jsm/loaders/GLTFLoader.js';
 import { DRACOLoader } from './lib/jsm/loaders/DRACOLoader.js';
-
+import { Outline, Inline, BlackAll } from "./lib/Toon.js";
+//import { OutlineEffect } from './lib/jsm/effects/OutlineEffect.js';
 // Class ThreeCanvas
 export class ThreeCanvas {
 
@@ -39,19 +40,21 @@ export class ThreeCanvas {
         renderer1.domElement.classList.add("threeview_renderer")
         
         // Renderer setup 2
-        const renderer2 = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        let renderer2 = new THREE.WebGLRenderer({ antialias: true, alpha: false });
         renderer2.setSize( this.size.w, this.size.h );
-        renderer2.toneMapping = THREE.ACESFilmicToneMapping;
-        renderer2.toneMappingExposure = 1;
+        renderer2.autoClear = false;
+        renderer2.shadowMap.enabled = false;
+        //renderer2.toneMapping = THREE.ACESFilmicToneMapping;
+        //renderer2.toneMappingExposure = 1;
         renderer2.domElement.style.cssText = "position:absolute; margin:0; padding:0; border:1px solid red;";
         renderer2.domElement.setAttribute("view", "TOP")
         renderer2.domElement.classList.add("threeview_renderer")        
 
         // Renderer setup 3
-        const renderer3 = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        const renderer3 = new THREE.WebGLRenderer({ antialias: true, alpha: false });
         renderer3.setSize( this.size.w, this.size.h );
-        renderer3.toneMapping = THREE.ACESFilmicToneMapping;
-        renderer3.toneMappingExposure = 1;
+        //renderer3.toneMapping = THREE.ACESFilmicToneMapping;
+        //renderer3.toneMappingExposure = 1;
         renderer3.domElement.style.cssText = "position:absolute; margin:0; padding:0; border:1px solid yellow;"; 
         renderer3.domElement.setAttribute("view", "FRONT") 
         renderer3.domElement.classList.add("threeview_renderer")               
@@ -82,11 +85,47 @@ export class ThreeCanvas {
 
 
         const depthMaterial = new THREE.MeshDepthMaterial()
-        const linesMaterial = new THREE.MeshBasicMaterial({ color:0xFFFFFF, wireframe:true});
+       // const outlineEffect = new OutlineEffect( renderer2, {defaultThickness:0.005, defaultColor:[1,1,1], defaultKeepAlive:false } );
+        //const linesMaterial = new THREE.MeshBasicMaterial({ color:0xFFFFFF, wireframe:true});
+
+        /*const outline_shader = {
+            uniforms: {
+                "thickness":  { value: 100.0 },
+            },
+            vertex_shader: `
+                varying vec2 vUv;
+                void main() {
+                  vUv = uv;
+                  gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);
+                }
+              `,
+            fragment_shader:`
+                varying vec2 vUv;
+                uniform float thickness;
+                
+                float edgeFactor(vec2 p){
+                    vec2 grid = abs(fract(p - 0.5) - 0.5) / fwidth(p) / thickness;
+                    return min(grid.x, grid.y);
+                }
+                
+                void main() {
+                        
+                    float a = edgeFactor(vUv);
+                    vec3 c = mix(vec3(1), vec3(0), a);
+                    gl_FragColor = vec4(c, 1.0);
+                }
+              `
+        };
+
+        const linesMaterial = new THREE.ShaderMaterial({
+            uniforms: THREE.UniformsUtils.clone(outline_shader.uniforms),
+            vertexShader: outline_shader.vertex_shader,
+            fragmentShader: outline_shader.fragment_shader
+        });*/
 
         // Renderers
         this.tools = [
-            { renderer: renderer1, camera: camera1, controls: controls1, material:null },
+            { type:'color', renderer: renderer1, camera: camera1, controls: controls1, material:null },
         ];
 
         if(this.VIEWS3){
@@ -112,12 +151,9 @@ export class ThreeCanvas {
 
              
 
-            this.tools.push({ renderer: renderer2, camera: camera2, controls: controls2, material:depthMaterial });
-            this.tools.push({ renderer: renderer3, camera: camera3, controls: controls3, material:linesMaterial });
-        } else {
-            this.tools.push({ material:depthMaterial });
-            this.tools.push({ material:linesMaterial });
-        }
+            this.tools.push({ type:'lines', renderer: renderer2, camera: camera2, controls: controls2, material:null });
+            this.tools.push({ type:'depth', renderer: renderer3, camera: camera3, controls: controls3, material:depthMaterial });
+        } 
 
 //         const controls = new OrbitControls( camera, renderer.domElement );
 //         controls.enableDamping = false;
@@ -222,6 +258,7 @@ export class ThreeCanvas {
         if (parameters.update && parameters.update instanceof Function)
             objectNew.updateObject = parameters.update.bind(objectNew);
 
+
         this.objects.push(objectNew);
         this.scene.add(objectNew.object);
         this.render()
@@ -253,6 +290,27 @@ export class ThreeCanvas {
         //this.tools.forEach((data)=>data.renderer.render(this.scene, data.camera))
 
         this.tools.forEach((data)=>{
+            
+            if( data.type === 'lines' ){ 
+
+                const currentAutoClear = data.renderer.autoClear;
+    
+                data.renderer.clear( true, true, true );
+
+                //this.scene.matrixWorldAutoUpdate = false;
+                //this.scene.background = null;
+                
+                this.scene.overrideMaterial = Outline;
+                data.renderer.render( this.scene, this.camera );
+
+                this.scene.overrideMaterial = Inline;
+                data.renderer.render( this.scene, this.camera );
+
+                this.scene.overrideMaterial = BlackAll;
+                return data.renderer.render( this.scene, this.camera )
+
+            }
+
             this.scene.overrideMaterial = !data.material ? null: data.material; 
             return data.renderer.render(this.scene, this.camera)
         })
