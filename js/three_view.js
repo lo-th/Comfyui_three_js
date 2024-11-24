@@ -7,10 +7,10 @@ import { $el } from "../../scripts/ui.js";
 import { ThreeCanvas } from "./ThreeCanvas.js";
 
 const DEBUG = true;
-const VIEWS3 = false
 
 // Function create widget
 async function widgetThreeJS(node, nodeData, inputData, app) {
+    let VIEWS3 = false
     const d = new Date();
                 
     const base_filenames = ["image", "lines","depth"].map((v)=>`${nodeData.name}${node.id}-${d.getUTCFullYear()}_${d.getUTCMonth() + 1}_${d.getUTCDate()}_${v}.png`)
@@ -98,6 +98,35 @@ async function widgetThreeJS(node, nodeData, inputData, app) {
                         // add validate check size
                     },
                 }),
+                $el("div.threeCanvasViews3Box", {
+                    style: {
+                    display: "flex",
+                }
+            },[
+                    $el("button.threeCanvasViews3", {
+                        style: {
+                            padding: "3px",
+                        },
+                        textContent: "Views3",
+                        onclick: (e) => {
+                            threeCanvas.VIEWS3 = !threeCanvas.VIEWS3
+                            panelWidget.element.querySelector(".threeCanvasViews3_camerafix").style.display = threeCanvas.VIEWS3 ? "block": "none"
+                            // threeCanvas.fixCamers = threeCanvas.VIEWS3
+                            threeCanvas.setViews3()
+                        },
+                }),
+                $el("input.threeCanvasViews3_camerafix", {
+                    type: "checkbox",
+                    title: "Fix all camers",
+                    checked: threeCanvas.fixCamers,
+                    style: {
+                        display: "none",
+                    },
+                    onchange: (e)=>{
+                        console.log("che")
+                        threeCanvas.fixCamers = !!e.target.checked
+                    },
+                })]),
             ]
         ),
     ]);
@@ -117,10 +146,7 @@ async function widgetThreeJS(node, nodeData, inputData, app) {
     };
     // end - Panel
 
-    let domsRenders = [threeCanvas.getDom()]
-    if ( VIEWS3 ) {
-        domsRenders = [threeCanvas.getDom(), threeCanvas.getDom(1),threeCanvas.getDom(2)]
-    }
+    const domsRenders =[threeCanvas.getDom(), threeCanvas.getDom(1),threeCanvas.getDom(2)]
 
     // Add widget threeCanvas
     const threeWrapper = $el("div.threeWrapper", {}, domsRenders);
@@ -138,7 +164,7 @@ async function widgetThreeJS(node, nodeData, inputData, app) {
         origDraw?.apply(this, arguments);
 
         const [ctx, nodeThree, widgetWidth, posY] = arguments;
-        const w = !VIEWS3 ? widgetWidth - 25: (widgetWidth - 25)/2;
+        const w = !threeCanvas.VIEWS3 ? widgetWidth - 25: (widgetWidth - 25)/2;
         const aspect_ratio = threeCanvas.size.h / threeCanvas.size.w;
 
         Object.assign(threeCanvas.getDom().style, {
@@ -146,7 +172,7 @@ async function widgetThreeJS(node, nodeData, inputData, app) {
             height: w * aspect_ratio + "px",
         });
 
-        if( VIEWS3 ){
+        if( threeCanvas.VIEWS3 ){
             Object.assign(threeCanvas.getDom(1).style, {
                 width: w + "px",
                 height: w * aspect_ratio + "px",

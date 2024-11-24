@@ -23,7 +23,12 @@ export class ThreeCanvas {
     }
 
     init(views3 = false) {
-        this.VIEWS3 = true//views3
+        // Views3
+        this.VIEWS3 = views3
+
+        // Fix camers
+        this.fixCamers = true;
+
         // Calculate aspect ratio
         this.aspectRatio = this.size.w / this.size.h;
 
@@ -40,7 +45,7 @@ export class ThreeCanvas {
         renderer1.domElement.classList.add("threeview_renderer")
         
         // Renderer setup 2
-        let renderer2 = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+        const renderer2 = new THREE.WebGLRenderer({ antialias: true, alpha: false });
         renderer2.setSize( this.size.w, this.size.h );
         renderer2.autoClear = false;
         renderer2.shadowMap.enabled = false;
@@ -65,14 +70,14 @@ export class ThreeCanvas {
         camera1.position.set(-4, 0, 0); // left
         
         // Camera setup 2        
-        /*const camera2 = new THREE.PerspectiveCamera(50, this.size.r, 0.1, 1000);
+        const camera2 = new THREE.PerspectiveCamera(50, this.size.r, 2, 10);
         camera2.position.set(0, -4, 0); // top
         camera2.lookAt(0, 0, 0);
 
         // Camera setup 3        
-        const camera3 = new THREE.PerspectiveCamera(50, this.size.r, 0.1, 1000);
+        const camera3 = new THREE.PerspectiveCamera(50, this.size.r, 2, 10);
         camera3.position.set(0, 0, -4); // front
-        camera3.lookAt(0, 0, 0);*/
+        camera3.lookAt(0, 0, 0);        
 
         // Controls setup
         const controls1 = new OrbitControls( camera1, renderer1.domElement );
@@ -82,6 +87,24 @@ export class ThreeCanvas {
         controls1.target.set(0, 0, 0);
         controls1.update();
         controls1.addEventListener( 'change', this.render.bind(this));
+
+        // Controls setup 2
+        const controls2 = new OrbitControls(  camera2,  renderer2.domElement );
+        controls2.enableDamping = false;
+        controls2.maxDistance = 10;
+        controls2.minDistance = 1;
+        controls2.target.set(0, 0, 0);
+        controls2.update();
+        controls2.addEventListener( 'change', this.render.bind(this)); 
+
+        // Controls setup 3
+        const controls3 = new OrbitControls( camera3, renderer3.domElement );
+        controls3.enableDamping = false;
+        controls3.maxDistance = 10;
+        controls3.minDistance = 1;
+        controls3.target.set(0, 0, 0);
+        controls3.update();
+        controls3.addEventListener( 'change', this.render.bind(this)); 
 
 
         const depthMaterial = new THREE.MeshDepthMaterial()
@@ -126,34 +149,16 @@ export class ThreeCanvas {
         // Renderers
         this.tools = [
             { type:'color', renderer: renderer1, camera: camera1, controls: controls1, material:null },
+            { type:'lines', renderer: renderer2, camera: camera2, material:null },
+            { type:'depth', renderer: renderer3, camera: camera3, material:depthMaterial }
         ];
 
-        if(this.VIEWS3){
-        // Controls setup
-            /*const controls2 = new OrbitControls(  camera2, renderer2.domElement );
-            controls2.enableDamping = false;
-            controls2.maxDistance = 10;
-            controls2.minDistance = 1;
-            controls2.target.set(0, 0, 0);
-            controls2.update();
-            controls2.addEventListener( 'change', this.render.bind(this)); 
 
-                   
-   
-            // Controls setup
-            const controls3 = new OrbitControls( camera3, renderer3.domElement );
-            controls3.enableDamping = false;
-            controls3.maxDistance = 10;
-            controls3.minDistance = 1;
-            controls3.target.set(0, 0, 0);
-            controls3.update();
-            controls3.addEventListener( 'change', this.render.bind(this)); */
+        this.getDom(1).style.display = "none"
+        this.getDom(2).style.display = "none"
 
-             
-
-            this.tools.push({ type:'lines', renderer: renderer2, material:null });
-            this.tools.push({ type:'depth', renderer: renderer3, material:depthMaterial });
-        } 
+        // Views3
+        this.setViews3()
 
 //         const controls = new OrbitControls( camera, renderer.domElement );
 //         controls.enableDamping = false;
@@ -170,10 +175,8 @@ export class ThreeCanvas {
 //         document.body.addEventListener( 'dragleave', function(e){ e.preventDefault()}, false );
 //         document.body.addEventListener( 'drop', this.drop.bind(this), false );
 
-        this.renderer = renderer1;
-        this.controls = controls1;
-        this.camera = camera1;
 
+        this.camera = camera1;
         this.scene = scene;
 
         // Add default object
@@ -185,6 +188,18 @@ export class ThreeCanvas {
         this.render();
 
         this.animate();
+    }
+
+    setViews3(){        
+        if(this.VIEWS3){            
+            this.getDom(1).style.display = "block"
+            this.getDom(2).style.display = "block"
+        } else {
+            this.getDom(1).style.display = "none"
+            this.getDom(2).style.display = "none"
+        }
+
+
     }
 
     initLoader(){
@@ -271,8 +286,12 @@ export class ThreeCanvas {
         this.tools.map((data)=>{
             const {renderer, camera} = data
             renderer.setSize(this.size.w, this.size.h)
-            camera.aspect = this.size.r;
-            camera.updateProjectionMatrix();
+
+            if(camera){
+                camera.aspect = this.size.r;
+                camera.updateProjectionMatrix();
+            }
+
         })
         this.needResize = false;
         // this.node.title = `${this.node.type} [${this.size.w}x${this.size.h}]`;
@@ -289,11 +308,12 @@ export class ThreeCanvas {
         if (this.autoScale) this.resize();
         //this.tools.forEach((data)=>data.renderer.render(this.scene, data.camera))
 
+        
         this.tools.forEach((data)=>{
-            
-            if( data.type === 'lines' ){ 
 
+            if( data.type === 'lines' ){ 
                 const currentAutoClear = data.renderer.autoClear;
+                const camera = this.VIEWS3 && !this.fixCamers ? data.camera : this.camera
     
                 data.renderer.clear( true, true, true );
 
@@ -301,18 +321,18 @@ export class ThreeCanvas {
                 //this.scene.background = null;
                 
                 this.scene.overrideMaterial = Outline;
-                data.renderer.render( this.scene, this.camera );
+                data.renderer.render( this.scene, camera );
 
                 this.scene.overrideMaterial = Inline;
-                data.renderer.render( this.scene, this.camera );
+                data.renderer.render( this.scene, camera );
 
                 this.scene.overrideMaterial = BlackAll;
-                return data.renderer.render( this.scene, this.camera )
+                return data.renderer.render( this.scene, camera )
 
             }
 
             this.scene.overrideMaterial = !data.material ? null: data.material; 
-            return data.renderer.render(this.scene, this.camera)
+            return data.renderer.render(this.scene, this.VIEWS3 && !this.fixCamers ? data.camera : this.camera)
         })
 
     }
@@ -326,8 +346,10 @@ export class ThreeCanvas {
         this.tools.map((data)=>{
             const {renderer, camera} = data
             renderer.setSize(this.size.w, this.size.h)
-            camera.aspect = this.size.r;
-            camera.updateProjectionMatrix();
+            if(camera){
+                camera.aspect = this.size.r;
+                camera.updateProjectionMatrix();
+            }
         })
 
         this.node.title = `${this.node.type} [${this.size.w}x${this.size.h}]`;
@@ -347,7 +369,6 @@ export class ThreeCanvas {
     async sendFileToServer(fileName, idx) {
         this.render();
         
-        if(!this.VIEWS3) idx = 0
         
         return new Promise((res) => {
             const uploadFile = async (blobFile) => {
