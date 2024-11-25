@@ -13,9 +13,11 @@ export class ThreeCanvas {
         this.size = { w, h, r, offset };
         this.objects = [];
         this.needResize = false;
+        this.pixelRatio = 1;
 
         // lock scale if false
         this.autoScale = !true;
+        this.autoAutoAnim = false;
     }
 
     getDom(idx=0) {
@@ -38,6 +40,8 @@ export class ThreeCanvas {
         // Renderer setup 1
         const renderer1 = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer1.setSize( this.size.w, this.size.h );
+        renderer1.setPixelRatio( this.pixelRatio );
+        renderer1.shadowMap.enabled = true;
         renderer1.toneMapping = THREE.ACESFilmicToneMapping;
         renderer1.toneMappingExposure = 1;
         renderer1.domElement.style.cssText = "position:absolute; margin:0; padding:0; border:1px solid black;";
@@ -47,10 +51,9 @@ export class ThreeCanvas {
         // Renderer setup 2
         const renderer2 = new THREE.WebGLRenderer({ antialias: true, alpha: false });
         renderer2.setSize( this.size.w, this.size.h );
+        renderer2.setPixelRatio( this.pixelRatio );
+        renderer2.setClearColor( 0x000000, 1 );
         renderer2.autoClear = false;
-        renderer2.shadowMap.enabled = false;
-        //renderer2.toneMapping = THREE.ACESFilmicToneMapping;
-        //renderer2.toneMappingExposure = 1;
         renderer2.domElement.style.cssText = "position:absolute; margin:0; padding:0; border:1px solid red;";
         renderer2.domElement.setAttribute("view", "TOP")
         renderer2.domElement.classList.add("threeview_renderer")        
@@ -58,8 +61,8 @@ export class ThreeCanvas {
         // Renderer setup 3
         const renderer3 = new THREE.WebGLRenderer({ antialias: true, alpha: false });
         renderer3.setSize( this.size.w, this.size.h );
-        //renderer3.toneMapping = THREE.ACESFilmicToneMapping;
-        //renderer3.toneMappingExposure = 1;
+        renderer3.setPixelRatio( this.pixelRatio );
+        renderer3.setClearColor( 0x000000, 1 );
         renderer3.domElement.style.cssText = "position:absolute; margin:0; padding:0; border:1px solid yellow;"; 
         renderer3.domElement.setAttribute("view", "FRONT") 
         renderer3.domElement.classList.add("threeview_renderer")               
@@ -108,43 +111,6 @@ export class ThreeCanvas {
 
 
         const depthMaterial = new THREE.MeshDepthMaterial()
-       // const outlineEffect = new OutlineEffect( renderer2, {defaultThickness:0.005, defaultColor:[1,1,1], defaultKeepAlive:false } );
-        //const linesMaterial = new THREE.MeshBasicMaterial({ color:0xFFFFFF, wireframe:true});
-
-        /*const outline_shader = {
-            uniforms: {
-                "thickness":  { value: 100.0 },
-            },
-            vertex_shader: `
-                varying vec2 vUv;
-                void main() {
-                  vUv = uv;
-                  gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);
-                }
-              `,
-            fragment_shader:`
-                varying vec2 vUv;
-                uniform float thickness;
-                
-                float edgeFactor(vec2 p){
-                    vec2 grid = abs(fract(p - 0.5) - 0.5) / fwidth(p) / thickness;
-                    return min(grid.x, grid.y);
-                }
-                
-                void main() {
-                        
-                    float a = edgeFactor(vUv);
-                    vec3 c = mix(vec3(1), vec3(0), a);
-                    gl_FragColor = vec4(c, 1.0);
-                }
-              `
-        };
-
-        const linesMaterial = new THREE.ShaderMaterial({
-            uniforms: THREE.UniformsUtils.clone(outline_shader.uniforms),
-            vertexShader: outline_shader.vertex_shader,
-            fragmentShader: outline_shader.fragment_shader
-        });*/
 
         // Renderers
         this.tools = [
@@ -187,7 +153,7 @@ export class ThreeCanvas {
 
         this.render();
 
-        this.animate();
+        if(this.autoAutoAnim) this.animate();
     }
 
     setViews3(){        

@@ -13,7 +13,7 @@ async function widgetThreeJS(node, nodeData, inputData, app) {
     let VIEWS3 = false
     const d = new Date();
                 
-    const base_filenames = ["image", "lines","depth"].map((v)=>`${nodeData.name}${node.id}-${d.getUTCFullYear()}_${d.getUTCMonth() + 1}_${d.getUTCDate()}_${v}.png`)
+    const base_filenames = ["image","lines","depth"].map((v)=>`${nodeData.name}${node.id}-${d.getUTCFullYear()}_${d.getUTCMonth() + 1}_${d.getUTCDate()}_${v}.png`)
 
     // Find widget stored image filename for threejs, and hide him.
     const widgeImageThree = node.widgets.find((w) => w.name === "imageThreejs");
