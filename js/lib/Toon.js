@@ -3,7 +3,7 @@ import * as THREE from "./three.module.js"
 export const Outline = new THREE.ShaderMaterial({
     uniforms: {
         color: { value: new THREE.Color(0xffFFFF) },
-        power: { value: 0.002 },
+        power: { value: 0.003 },
     },
     vertexShader:/* glsl */ `
         uniform float power;
@@ -26,7 +26,7 @@ export const Outline = new THREE.ShaderMaterial({
 export const Inline = new THREE.ShaderMaterial({
     uniforms: {
         color: { value: new THREE.Color(0xFFFFFF) },
-        power: { value: 0.001 },
+        power: { value: 0.0015 },
     },
     vertexShader:/* glsl */ `
         uniform float power;
