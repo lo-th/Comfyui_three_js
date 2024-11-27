@@ -19,6 +19,7 @@ export class ThreeCanvas {
         this.globalSize = 3
 
         this.withHelper = true;
+        this.fov = 55;
 
         // lock scale if false
         this.autoScale = !true;
@@ -72,36 +73,49 @@ export class ThreeCanvas {
         renderer3.outputColorSpace = THREE.LinearSRGBColorSpace;
         renderer3.domElement.style.cssText = "position:absolute; margin:0; padding:0; border:1px solid yellow;"; 
         renderer3.domElement.setAttribute("view", "FRONT") 
-        renderer3.domElement.classList.add("threeview_renderer")               
+        renderer3.domElement.classList.add("threeview_renderer")   
+
+        // Renderer setup 3
+        const renderer4 = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+        renderer4.setSize( this.size.w, this.size.h );
+        renderer4.setPixelRatio( this.pixelRatio );
+        renderer4.setClearColor( 0x000000, 1 );
+        renderer4.outputColorSpace = THREE.LinearSRGBColorSpace;
+        renderer4.domElement.style.cssText = "position:absolute; margin:0; padding:0; border:1px solid cyan;"; 
+        renderer4.domElement.setAttribute("view", "FRONT") 
+        renderer4.domElement.classList.add("threeview_renderer")             
 
         // Camera setup 1
-        const camera1 = new THREE.PerspectiveCamera(50, this.size.r, 0.1, 10);
+        const camera1 = new THREE.PerspectiveCamera(this.fov, this.size.r, 0.1, 10);
         camera1.position.set(0, 0, 5); // front
         camera1.lookAt(0, 0, 0);
         
         // Camera setup 2        
-        const camera2 = new THREE.PerspectiveCamera(50, this.size.r, 0.1, 10);
+        const camera2 = new THREE.PerspectiveCamera(this.fov, this.size.r, 0.1, 10);
         camera2.position.set(0, 0, 5); // top
         camera2.lookAt(0, 0, 0);
 
         // Camera setup 3        
-        const camera3 = new THREE.PerspectiveCamera(50, this.size.r, 0.1, 10);
+        const camera3 = new THREE.PerspectiveCamera(this.fov, this.size.r, 0.1, 10);
         camera3.position.set(0, 0, 5); // front
         camera3.lookAt(0, 0, 0);
 
 
         const depthMaterial = new THREE.MeshDepthMaterial()
+        const normalMaterial = new THREE.MeshNormalMaterial()
 
         // Renderers
         this.tools = [
             { type:'color', renderer: renderer1, camera: camera1, material:null },
             { type:'lines', renderer: renderer2, camera: camera2, material:null },
-            { type:'depth', renderer: renderer3, camera: camera3, material:depthMaterial }
+            { type:'depth', renderer: renderer3, camera: camera3, material:depthMaterial },
+            { type:'normal', renderer: renderer4, camera: camera3, material:normalMaterial }
         ];
 
 
         this.getDom(1).style.display = "none"
         this.getDom(2).style.display = "none"
+        this.getDom(3).style.display = "none"
 
         /*let m0 = new THREE.Mesh(new THREE.BoxGeometry(5,5,5))
         let b0 = new THREE.BoxHelper(m0)
@@ -151,9 +165,11 @@ export class ThreeCanvas {
         if(this.VIEWS3){            
             this.getDom(1).style.display = "block";
             this.getDom(2).style.display = "block";
+            this.getDom(3).style.display = "block";
         } else {
             this.getDom(1).style.display = "none";
             this.getDom(2).style.display = "none";
+            this.getDom(3).style.display = "none";
         }
     }
 
@@ -269,6 +285,7 @@ export class ThreeCanvas {
             const camera = data.camera
             if( camera ){
                 camera.aspect = self.size.r;
+                camera.fov = self.fov;
                 camera.position.copy( position );
                 camera.lookAt( center );
                 camera.near = near;
