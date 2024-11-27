@@ -3,6 +3,7 @@ import { OrbitControls } from "./lib/jsm/controls/OrbitControls.js";
 import { GLTFLoader } from './lib/jsm/loaders/GLTFLoader.js';
 import { DRACOLoader } from './lib/jsm/loaders/DRACOLoader.js';
 import { Outline, Inline, BlackAll } from "./lib/Toon.js";
+import { Hub } from "./lib/Hub.js";
 
 // Class ThreeCanvas
 export class ThreeCanvas {
@@ -190,21 +191,21 @@ export class ThreeCanvas {
 
     }
 
-    addHeadTest(url = `./assets/head2.glb`){
+    addHeadTest(url = `./assets/head.glb`){
 
         const self = this;
         const scene = this.scene;
         const headModel = new URL(url, import.meta.url);
 
-        const light = new THREE.PointLight( 0xffFFFF, 300 );
-        light.position.set(-5,10,-10)
+        const light = new THREE.PointLight( 0x0080FF, 300 );
+        light.position.set(-5,5,-10)
         scene.add( light );
 
-        const light2 = new THREE.PointLight( 0xff0000, 100 );
-        light2.position.set(5,-10,-5)
+        const light2 = new THREE.PointLight( 0xff8000, 100 );
+        light2.position.set(5,-5,-5)
         scene.add( light2 );
 
-        const light3 = new THREE.PointLight( 0x00FFFF, 100 );
+        const light3 = new THREE.PointLight( 0xFFFFFF, 100 );
         light3.position.set(0,5,5)
         scene.add( light3 );
 
@@ -228,6 +229,8 @@ export class ThreeCanvas {
         b0.geometry.computeBoundingBox()
         const radius = b0.geometry.boundingSphere.radius;
         const center = b0.geometry.boundingBox.getCenter(new THREE.Vector3());
+
+        console.log(radius)
 
         let pos = center.clone().add( new THREE.Vector3(0,0,radius*2) )
         let near = radius*0.5;
