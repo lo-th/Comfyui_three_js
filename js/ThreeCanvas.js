@@ -44,9 +44,10 @@ export class ThreeCanvas {
         const scene = new THREE.Scene();
 
         // Renderer setup 1
-        const renderer1 = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        const renderer1 = new THREE.WebGLRenderer({ antialias: true, alpha: false });
         renderer1.setSize( this.size.w, this.size.h );
         renderer1.setPixelRatio( this.pixelRatio );
+        renderer1.setClearColor( 0x000000, 1 );
         renderer1.shadowMap.enabled = true;
         renderer1.toneMapping = THREE.ACESFilmicToneMapping;
         renderer1.toneMappingExposure = 1;
