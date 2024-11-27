@@ -3,7 +3,7 @@ import { OrbitControls } from "./lib/jsm/controls/OrbitControls.js";
 import { GLTFLoader } from './lib/jsm/loaders/GLTFLoader.js';
 import { DRACOLoader } from './lib/jsm/loaders/DRACOLoader.js';
 import { Outline, Inline, BlackAll } from "./lib/Toon.js";
-//import { OutlineEffect } from './lib/jsm/effects/OutlineEffect.js';
+
 // Class ThreeCanvas
 export class ThreeCanvas {
 
@@ -14,6 +14,10 @@ export class ThreeCanvas {
         this.objects = [];
         this.needResize = false;
         this.pixelRatio = 1;
+
+        this.globalSize = 3
+
+        this.withHelper = true;
 
         // lock scale if false
         this.autoScale = !true;
@@ -44,6 +48,7 @@ export class ThreeCanvas {
         renderer1.shadowMap.enabled = true;
         renderer1.toneMapping = THREE.ACESFilmicToneMapping;
         renderer1.toneMappingExposure = 1;
+        //renderer1.outputColorSpace = THREE.SRGBColorSpace;
         renderer1.domElement.style.cssText = "position:absolute; margin:0; padding:0; border:1px solid black;";
         renderer1.domElement.setAttribute("view", "LEFT")
         renderer1.domElement.classList.add("threeview_renderer")
@@ -63,58 +68,32 @@ export class ThreeCanvas {
         renderer3.setSize( this.size.w, this.size.h );
         renderer3.setPixelRatio( this.pixelRatio );
         renderer3.setClearColor( 0x000000, 1 );
+        renderer3.outputColorSpace = THREE.LinearSRGBColorSpace;
         renderer3.domElement.style.cssText = "position:absolute; margin:0; padding:0; border:1px solid yellow;"; 
         renderer3.domElement.setAttribute("view", "FRONT") 
         renderer3.domElement.classList.add("threeview_renderer")               
 
         // Camera setup 1
-        const camera1 = new THREE.PerspectiveCamera(50, this.size.r, 2, 10);
+        const camera1 = new THREE.PerspectiveCamera(50, this.size.r, 0.1, 10);
+        camera1.position.set(0, 0, 5); // front
         camera1.lookAt(0, 0, 0);
-        camera1.position.set(-4, 0, 0); // left
         
         // Camera setup 2        
-        const camera2 = new THREE.PerspectiveCamera(50, this.size.r, 2, 10);
-        camera2.position.set(0, -4, 0); // top
+        const camera2 = new THREE.PerspectiveCamera(50, this.size.r, 0.1, 10);
+        camera2.position.set(0, 0, 5); // top
         camera2.lookAt(0, 0, 0);
 
         // Camera setup 3        
-        const camera3 = new THREE.PerspectiveCamera(50, this.size.r, 2, 10);
-        camera3.position.set(0, 0, -4); // front
-        camera3.lookAt(0, 0, 0);        
-
-        // Controls setup
-        const controls1 = new OrbitControls( camera1, renderer1.domElement );
-        controls1.enableDamping = false;
-        controls1.maxDistance = 10;
-        controls1.minDistance = 1;
-        controls1.target.set(0, 0, 0);
-        controls1.update();
-        controls1.addEventListener( 'change', this.render.bind(this));
-
-        // Controls setup 2
-        const controls2 = new OrbitControls(  camera2,  renderer2.domElement );
-        controls2.enableDamping = false;
-        controls2.maxDistance = 10;
-        controls2.minDistance = 1;
-        controls2.target.set(0, 0, 0);
-        controls2.update();
-        controls2.addEventListener( 'change', this.render.bind(this)); 
-
-        // Controls setup 3
-        const controls3 = new OrbitControls( camera3, renderer3.domElement );
-        controls3.enableDamping = false;
-        controls3.maxDistance = 10;
-        controls3.minDistance = 1;
-        controls3.target.set(0, 0, 0);
-        controls3.update();
-        controls3.addEventListener( 'change', this.render.bind(this)); 
+        const camera3 = new THREE.PerspectiveCamera(50, this.size.r, 0.1, 10);
+        camera3.position.set(0, 0, 5); // front
+        camera3.lookAt(0, 0, 0);
 
 
         const depthMaterial = new THREE.MeshDepthMaterial()
 
         // Renderers
         this.tools = [
-            { type:'color', renderer: renderer1, camera: camera1, controls: controls1, material:null },
+            { type:'color', renderer: renderer1, camera: camera1, material:null },
             { type:'lines', renderer: renderer2, camera: camera2, material:null },
             { type:'depth', renderer: renderer3, camera: camera3, material:depthMaterial }
         ];
@@ -123,33 +102,44 @@ export class ThreeCanvas {
         this.getDom(1).style.display = "none"
         this.getDom(2).style.display = "none"
 
+        /*let m0 = new THREE.Mesh(new THREE.BoxGeometry(5,5,5))
+        let b0 = new THREE.BoxHelper(m0)
+        let m1 = new THREE.Mesh(new THREE.BoxGeometry(3,3,3))
+        let b1 = new THREE.BoxHelper(m1, 0xFF0000 )
+        scene.add(b0, b1)*/
+
+
         // Views3
         this.setViews3()
 
-//         const controls = new OrbitControls( camera, renderer.domElement );
-//         controls.enableDamping = false;
-//         controls.maxDistance = 10;
-//         controls.minDistance = 1;
-//         controls.target.set(0, 0, 0);
-//         controls.update();
-//         controls.addEventListener( 'change', this.render.bind(this));
-//         controls.addEventListener( 'end', this.sendFileToServer.bind(this, this.widgeImageThree.value));
+        const controls = new OrbitControls( camera1, renderer1.domElement );
+        controls.enableDamping = false;
+        controls.maxDistance = 8;
+        controls.minDistance = 0.01;
+        controls.target.set(0, 0, 0);
+        controls.update();
+        controls.addEventListener( 'change', this.render.bind(this));
+        //controls.addEventListener( 'end', this.sendFileToServer.bind(this, this.widgeImageThree.value));
 
 //         // drop model direcly on view
-//         document.body.addEventListener( 'dragover', function(e){ e.preventDefault() }, false );
-//         document.body.addEventListener( 'dragend', function(e){ e.preventDefault() }, false );
-//         document.body.addEventListener( 'dragleave', function(e){ e.preventDefault()}, false );
-//         document.body.addEventListener( 'drop', this.drop.bind(this), false );
+        document.body.addEventListener( 'dragover', function(e){ e.preventDefault() }, false );
+        document.body.addEventListener( 'dragend', function(e){ e.preventDefault() }, false );
+        document.body.addEventListener( 'dragleave', function(e){ e.preventDefault()}, false );
+        document.body.addEventListener( 'drop', this.drop.bind(this), false );
 
 
         this.camera = camera1;
+        this.controls = controls;
         this.scene = scene;
+
+        this.helper = new THREE.Group()
+        this.scene.add(this.helper);
 
         // Add default object
         // this.addObjectToScene("cube");
 
-        this.initLoader()
-        this.addHeadTest()
+        this.initLoader();
+        this.addHeadTest();
 
         this.render();
 
@@ -158,14 +148,12 @@ export class ThreeCanvas {
 
     setViews3(){        
         if(this.VIEWS3){            
-            this.getDom(1).style.display = "block"
-            this.getDom(2).style.display = "block"
+            this.getDom(1).style.display = "block";
+            this.getDom(2).style.display = "block";
         } else {
-            this.getDom(1).style.display = "none"
-            this.getDom(2).style.display = "none"
+            this.getDom(1).style.display = "none";
+            this.getDom(2).style.display = "none";
         }
-
-
     }
 
     initLoader(){
@@ -198,19 +186,12 @@ export class ThreeCanvas {
     directGlb( data, name ){
 
         const self = this;
-        const scene = this.scene;
-
-        this.loaderGltf.parse( data, '', function ( glb ) {
-            if(this.model) this.scene.remove(this.model);
-            const model = glb.scene;
-            scene.add( model );
-            self.model = model;
-            self.render();
-        }.bind(this))
+        this.loaderGltf.parse( data, '', ( glb ) => { self.addModel( glb ); })
 
     }
 
     addHeadTest(url = `./assets/head2.glb`){
+
         const self = this;
         const scene = this.scene;
         const headModel = new URL(url, import.meta.url);
@@ -227,13 +208,41 @@ export class ThreeCanvas {
         light3.position.set(0,5,5)
         scene.add( light3 );
 
-        this.loaderGltf.load( headModel.href, async function ( gltf ) {
-            self.addObjectToScene( "model", { update: null, geo: gltf.scene, mat: {color:0xffffff}, scale: {x: 10, y: 10, z: 10}} );
-        })
+        this.loaderGltf.load( headModel.href, async function ( glb ) { self.addModel( glb ); })
+
+    }
+
+    addModel( glb ){
+
+        if( this.model ) this.scene.remove(this.model);
+        this.helper.children = []
+
+        const model = glb.scene || glb.scenes[0];
+        const clips = glb.animations || [];
+
+        model.updateMatrixWorld(); 
+
+        let b0 = new THREE.BoxHelper( model, 0x201924 );
+        this.helper.add(b0)
+
+        b0.geometry.computeBoundingBox()
+        const radius = b0.geometry.boundingSphere.radius;
+        const center = b0.geometry.boundingBox.getCenter(new THREE.Vector3());
+
+        let pos = center.clone().add( new THREE.Vector3(0,0,radius*2) )
+        let near = radius*0.5;
+        let far = radius * 4;
+
+        this.scene.add(model);
+        this.model = model;
+
+        // update camera and render
+        this.setCamera( pos, center, near, far );
 
     }
 
     addObjectToScene(type, parameters = {}) {
+
         const objectNew = new ThreeObject(type, parameters);
 
         if (parameters.update && parameters.update instanceof Function)
@@ -242,7 +251,36 @@ export class ThreeCanvas {
 
         this.objects.push(objectNew);
         this.scene.add(objectNew.object);
-        this.render()
+        this.render();
+
+    }
+
+    setCamera( position, center, near, far ) {
+
+        const self = this;
+
+        //this.controls.reset()
+
+        this.tools.map((data)=>{
+
+            const camera = data.camera
+            if( camera ){
+                camera.aspect = self.size.r;
+                camera.position.copy( position );
+                camera.lookAt( center );
+                camera.near = near;
+                camera.far = far;
+                camera.updateProjectionMatrix();
+            }
+
+        })
+
+        this.controls.minDistance = near;
+        this.controls.maxDistance = far;
+        this.controls.target.copy(center);
+        this.controls.update();
+        //this.controls.saveState();
+
     }
 
     resize() {
@@ -271,11 +309,15 @@ export class ThreeCanvas {
     }
 
     async render() {
+
         if (this.autoScale) this.resize();
         //this.tools.forEach((data)=>data.renderer.render(this.scene, data.camera))
 
         
         this.tools.forEach((data)=>{
+
+            if( data.type !== 'color' ) this.helper.visible = false
+            else if( this.withHelper ) this.helper.visible = true
 
             if( data.type === 'lines' ){ 
                 const currentAutoClear = data.renderer.autoClear;

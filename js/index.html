@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charSet="utf-8"/>
+        <meta name="language" content="english"/>
+        <meta http-equiv="content-type" content="text/html"/>
+        <meta name="author" content="lo-th"/>
+        <meta name="designer" content="lo-th"/>
+        <meta name="publisher" content="lo-th"/>
+		<title>THREE DIRECT</title>
+		<meta name="description" content="test three view"/>
+		
+	</head>
+	<body style="background-color:#000; margin:0; padding:0; overflow:hidden;">
+		
+		<script type="module">
+
+		    import { ThreeCanvas } from './ThreeCanvas.js'
+
+		    const threeCanvas = new ThreeCanvas(null, null);
+		    threeCanvas.init(true);
+
+		    let dom0 = threeCanvas.getDom(0);
+		    let dom1 = threeCanvas.getDom(1);
+		    let dom2 = threeCanvas.getDom(2);
+		    dom1.style.left = threeCanvas.size.w + 'px';
+		    dom2.style.top = threeCanvas.size.h + 'px';
+
+		    document.body.appendChild(dom0);
+		    document.body.appendChild(dom1);
+		    document.body.appendChild(dom2);
+
+		</script>
+	</body>
+</html>
