@@ -70,7 +70,7 @@ export class ThreeCanvas {
         renderer3.setSize( this.size.w, this.size.h );
         renderer3.setPixelRatio( this.pixelRatio );
         renderer3.setClearColor( 0x000000, 1 );
-        renderer3.outputColorSpace = THREE.LinearSRGBColorSpace;
+        //renderer3.outputColorSpace = THREE.LinearSRGBColorSpace;
         renderer3.domElement.style.cssText = "position:absolute; margin:0; padding:0; border:1px solid yellow;"; 
         renderer3.domElement.setAttribute("view", "FRONT") 
         renderer3.domElement.classList.add("threeview_renderer")   
@@ -79,9 +79,9 @@ export class ThreeCanvas {
         const renderer4 = new THREE.WebGLRenderer({ antialias: true, alpha: false });
         renderer4.setSize( this.size.w, this.size.h );
         renderer4.setPixelRatio( this.pixelRatio );
-        renderer4.setClearColor( 0x000000, 1 );
-        renderer4.outputColorSpace = THREE.LinearSRGBColorSpace;
-        renderer4.domElement.style.cssText = "position:absolute; margin:0; padding:0; border:1px solid cyan;"; 
+        renderer4.setClearColor( 0x8080ff, 1 );
+        //renderer4.outputColorSpace = THREE.LinearSRGBColorSpace;
+        renderer4.domElement.style.cssText = "position:absolute; margin:0; padding:0; border:1px solid #8080ff;"; 
         renderer4.domElement.setAttribute("view", "FRONT") 
         renderer4.domElement.classList.add("threeview_renderer")             
 
@@ -137,10 +137,10 @@ export class ThreeCanvas {
         //controls.addEventListener( 'end', this.sendFileToServer.bind(this, this.widgeImageThree.value));
 
 //         // drop model direcly on view
-        document.body.addEventListener( 'dragover', function(e){ e.preventDefault() }, false );
+        /*document.body.addEventListener( 'dragover', function(e){ e.preventDefault() }, false );
         document.body.addEventListener( 'dragend', function(e){ e.preventDefault() }, false );
         document.body.addEventListener( 'dragleave', function(e){ e.preventDefault()}, false );
-        document.body.addEventListener( 'drop', this.drop.bind(this), false );
+        document.body.addEventListener( 'drop', this.drop.bind(this), false );*/
 
 
         this.camera = camera1;

@@ -77,7 +77,7 @@ class ThreeView:
     def INPUT_TYPES(self):
         return {
         "required": {
-            "imageThreejs": ("STRING", {"default":"theejs_image.png,theejs_image_lines.png,theejs_image_depth.png"},)
+            "imageThreejs": ("STRING", {"default":"theejs_image.png,theejs_image_lines.png,theejs_image_depth.png,theejs_image_normal.png"},)
         },
         "hidden": { "unique_id":"UNIQUE_ID" }
         }
@@ -96,8 +96,8 @@ class ThreeView:
         return float("NaN") #m.digest().hex()
 
 
-    RETURN_TYPES = ("IMAGE","IMAGE","IMAGE",)
-    RETURN_NAMES = ("image", "lines", "depth")
+    RETURN_TYPES = ("IMAGE", "IMAGE", "IMAGE", "IMAGE")
+    RETURN_NAMES = ("image", "lines", "depth", "normal")
     FUNCTION = "process_three_js_image"
     CATEGORY = "lth"
 

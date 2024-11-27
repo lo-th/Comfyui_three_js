@@ -13,7 +13,7 @@ async function widgetThreeJS(node, nodeData, inputData, app) {
     let VIEWS3 = false
     const d = new Date();
                 
-    const base_filenames = ["image","lines","depth"].map((v)=>`${nodeData.name}${node.id}-${d.getUTCFullYear()}_${d.getUTCMonth() + 1}_${d.getUTCDate()}_${v}.png`)
+    const base_filenames = ["image","lines","depth","normal"].map((v)=>`${nodeData.name}${node.id}-${d.getUTCFullYear()}_${d.getUTCMonth() + 1}_${d.getUTCDate()}_${v}.png`)
 
     // Find widget stored image filename for threejs, and hide him.
     const widgeImageThree = node.widgets.find((w) => w.name === "imageThreejs");
@@ -123,7 +123,6 @@ async function widgetThreeJS(node, nodeData, inputData, app) {
                         display: "none",
                     },
                     onchange: (e)=>{
-                        console.log("che")
                         threeCanvas.fixCamers = !!e.target.checked
                     },
                 })]),
@@ -146,7 +145,7 @@ async function widgetThreeJS(node, nodeData, inputData, app) {
     };
     // end - Panel
 
-    const domsRenders =[threeCanvas.getDom(), threeCanvas.getDom(1),threeCanvas.getDom(2)]
+    const domsRenders =[threeCanvas.getDom(), threeCanvas.getDom(1),threeCanvas.getDom(2),threeCanvas.getDom(3)]
 
     // Add widget threeCanvas
     const threeWrapper = $el("div.threeWrapper", {}, domsRenders);
@@ -185,6 +184,14 @@ async function widgetThreeJS(node, nodeData, inputData, app) {
                 top: parseFloat(threeCanvas.getDom().style.height) + 10 + "px"
 
             });
+
+            Object.assign(threeCanvas.getDom(3).style, {
+                width: w + "px",
+                height: w * aspect_ratio + "px",
+                left: w + 10 + "px",
+                top: parseFloat(threeCanvas.getDom().style.height) + 10 + "px"
+
+            });            
         }
 
 
