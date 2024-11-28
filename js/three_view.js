@@ -53,26 +53,16 @@ async function widgetThreeJS(node, nodeData, inputData, app) {
                     style: {
                         padding: "3px",
                     },
-                    textContent: "Add",
-                    onclick: (e) =>
-                        threeCanvas.addObjectToScene(
-                            "sphere",
-                            function () {
-                                this.object.rotation.z += 0.01;
-                            },
-                            {
-                                geo: [0.5, 6, 6],
-                                mat: { color: "red"}
-                            }
-                        ),
+                    textContent: "Load",
+                    onclick: (e) => threeCanvas.load(),
                 }),
                 $el("button.threeCanvasDel", {
                     style: {
                         padding: "3px",
                         color: "red",
                     },
-                    textContent: "Del",
-                    onclick: (e) => alert("Dev..."),
+                    textContent: "X",
+                    onclick: (e) => threeCanvas.clear(true),
                 }),
                 $el("button.threeCanvasSize", {
                     style: {
@@ -107,7 +97,7 @@ async function widgetThreeJS(node, nodeData, inputData, app) {
                         style: {
                             padding: "3px",
                         },
-                        textContent: "Views3",
+                        textContent: "All Views",
                         onclick: (e) => {
                             threeCanvas.VIEWS3 = !threeCanvas.VIEWS3
                             panelWidget.element.querySelector(".threeCanvasViews3_camerafix").style.display = threeCanvas.VIEWS3 ? "block": "none"
