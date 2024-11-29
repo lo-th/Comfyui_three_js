@@ -1,3 +1,4 @@
+//import { api } from "../../scripts/api.js";
 import * as THREE from "./lib/three.module.js";
 import { OrbitControls } from "./lib/jsm/controls/OrbitControls.js";
 import { GLTFLoader } from './lib/jsm/loaders/GLTFLoader.js';
@@ -9,16 +10,18 @@ import { Files } from "./lib/Files.js";
 // Class ThreeCanvas
 export class ThreeCanvas {
 
-    constructor(node, widget, w = 512, h = 512, r = 1, offset = 10) {
+    constructor(node, widget, params ={} ) {
+        const {w = 512, h = 512, r = 1, offset = 10, currentModel = null} = params
         this.widgeImageThree = widget;
         this.node = node;
         this.size = { w, h, r, offset };
+        this.currentModel = currentModel;
+
         this.objects = [];
         this.needResize = false;
         this.pixelRatio = 1;
 
-        this.globalSize = 3;
-
+        this.enableDrag = false;
         this.withHelper = true;
         this.fov = 55;
 
@@ -144,10 +147,13 @@ export class ThreeCanvas {
         //controls.addEventListener( 'end', this.sendFileToServer.bind(this, this.widgeImageThree.value));
 
         // drop model direcly on view
-        /*document.body.addEventListener( 'dragover', function(e){ e.preventDefault() }, false );
-        document.body.addEventListener( 'dragend', function(e){ e.preventDefault() }, false );
-        document.body.addEventListener( 'dragleave', function(e){ e.preventDefault()}, false );
-        document.body.addEventListener( 'drop', this.drop.bind(this), false );*/
+
+        if( this.enableDrag ){
+            document.body.addEventListener( 'dragover', function(e){ e.preventDefault() }, false );
+            document.body.addEventListener( 'dragend', function(e){ e.preventDefault() }, false );
+            document.body.addEventListener( 'dragleave', function(e){ e.preventDefault()}, false );
+            document.body.addEventListener( 'drop', this.drop.bind(this), false );
+        }
 
         // hub for all setting
         this.hub = new Hub();
@@ -161,15 +167,70 @@ export class ThreeCanvas {
         this.helper = new THREE.Group()
         this.scene.add(this.helper);
 
-        // Add default object
-        // this.addObjectToScene("cube");
+        this.light = new THREE.Group()
+        this.scene.add(this.light);
 
+        this.initLight();
         this.initLoader();
-        this.addHeadTest();
+
+        // console.log(this.currentModel)
+        if(!this.currentModel) this.addHeadTest();
 
         this.render();
 
         if(this.autoAutoAnim) this.animate();
+    }
+
+    initLight(){
+
+        this.sun = new THREE.DirectionalLight( 0xFFFFFF, 0 );
+        this.light.add( this.sun, this.sun.target );
+
+        // debug sun position
+        //this.sunHelper = new THREE.CameraHelper( this.sun.shadow.camera )
+        //this.light.add( this.sunHelper );
+
+        this.light.add( new THREE.AmbientLight( 0xffffFF, 0.2) );
+
+    }
+
+    setLight( option = {} ){
+
+        const o = {
+            position:[0,1,0],
+            target:[0,0,0],
+            intensity:3,
+            quality:1024,
+            bias:-0.0005,
+            radius:4,
+            range:0.2,
+            near:0.1,
+            far:4,
+            ...option
+        }
+
+        const sun = this.sun;
+        sun.intensity = o.intensity; 
+        sun.position.fromArray(o.position);
+        sun.target.position.fromArray(o.target);
+        //sun.updateWorldMatrix( true, true );
+        //sun.target.updateWorldMatrix( true, true );
+        const s = sun.shadow;
+        const c = s.camera;
+
+        c.top = c.right = o.range;
+        c.bottom = c.left = -o.range;
+        c.near = o.near;
+        c.far = o.far;
+        c.updateProjectionMatrix();
+        s.mapSize.width = s.mapSize.height = o.quality;
+        s.radius = o.radius;
+        s.bias = o.bias;
+        s.needsUpdate = true;
+        sun.castShadow = true;
+
+        if(this.sunHelper) this.sunHelper.update();
+
     }
 
     setViews3(){        
@@ -182,6 +243,10 @@ export class ThreeCanvas {
             this.getDom(2).style.display = "none";
             this.getDom(3).style.display = "none";
         }
+    }
+
+    setApi(api){
+        this.api = api;
     }
 
     initLoader(){
@@ -207,10 +272,26 @@ export class ThreeCanvas {
 
     }
 
-    loadEnd( content, fname, ftype ){
+    async loadEnd( content, fname, ftype ){
 
         this.directGlb( content, fname );
 
+        // Load file to server
+        const body = new FormData();
+        body.append("image", new Blob([content]), fname);
+        body.append("subfolder", "ThreeViewModels");
+
+        const resp = await this.api.fetchApi("/upload/image", {
+          method: "POST",
+          body,
+        });
+
+        if (resp.status === 200) {
+          const data = await resp.json();
+          let path = data.name;
+          if (data.subfolder) path = data.subfolder + "/" + path;
+          this.currentModel = path
+        }
     }
 
     drop( e ){
@@ -247,7 +328,7 @@ export class ThreeCanvas {
         let u = headModel.href;
         this.defPath =  u.substring( 0, u.lastIndexOf('/')+1 );//;
 
-        const light = new THREE.PointLight( 0x0080FF, 300 );
+        /*const light = new THREE.PointLight( 0x0080FF, 300 );
         light.position.set(-5,5,-10)
         scene.add( light );
 
@@ -257,7 +338,7 @@ export class ThreeCanvas {
 
         const light3 = new THREE.PointLight( 0xFFFFFF, 100 );
         light3.position.set(0,5,5)
-        scene.add( light3 );
+        scene.add( light3 );*/
 
         this.loaderGltf.load( headModel.href, async function ( glb ) { self.addModel( glb ); })
 
@@ -275,18 +356,37 @@ export class ThreeCanvas {
         let b0 = new THREE.BoxHelper( model, 0x201924 );
         this.helper.add(b0)
 
+        b0.geometry.computeBoundingSphere()
         b0.geometry.computeBoundingBox()
+        const box = b0.geometry.boundingBox;
         const radius = b0.geometry.boundingSphere.radius;
-        const center = b0.geometry.boundingBox.getCenter(new THREE.Vector3());
+        const center = box.getCenter(new THREE.Vector3());
 
-        //console.log(radius)
+        console.log( radius)
+
+        let lightpos = center.clone().add( new THREE.Vector3(-radius*0.3,radius*2, radius) )
 
         let pos = center.clone().add( new THREE.Vector3(0,0,radius*2) )
         let near = radius*0.5;
         let far = radius * 4;
 
+        model.traverse( ( child ) => {
+            if ( child.isMesh ){ 
+                child.receiveShadow = true;
+                child.castShadow = true;
+            }
+        })
+
         this.scene.add(model);
         this.model = model;
+
+        this.setLight({
+            position:lightpos.toArray(),
+            target:center.toArray(),
+            range:radius*2,
+            near:near,
+            far:far,
+        })
 
         // update camera and render
         this.setCamera( pos, center, near, far );

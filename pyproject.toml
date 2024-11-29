@@ -1,8 +1,8 @@
 # pyproject.toml
 [project]
 name = "comfyui_three_js"
-description = "use three.js 3d view in comfyui"
-version = "0.2.0"
+description = "Use power of three.js in 3d view on comfyui."
+version = "0.2.2"
 license = { file = "LICENSE" }
 dependencies  = []
 

@@ -9,7 +9,7 @@ import { ThreeCanvas } from "./ThreeCanvas.js";
 const DEBUG = true;
 
 // Function create widget
-async function widgetThreeJS(node, nodeData, inputData, app) {
+async function widgetThreeJS(node, nodeData, inputData, app, params = {}) {
     let VIEWS3 = false
     const d = new Date();
                 
@@ -29,7 +29,8 @@ async function widgetThreeJS(node, nodeData, inputData, app) {
     }
 
     let widget = {};
-    const threeCanvas = new ThreeCanvas(node, widgeImageThree);
+    const threeCanvas = new ThreeCanvas(node, widgeImageThree, {currentModel: params.currentModel});
+    threeCanvas.setApi(api);
     threeCanvas.init(VIEWS3);
 
     // Add panel widget
@@ -54,7 +55,10 @@ async function widgetThreeJS(node, nodeData, inputData, app) {
                         padding: "3px",
                     },
                     textContent: "Load",
-                    onclick: (e) => threeCanvas.load(),
+                    onclick: (e) => {
+                        threeCanvas.load()
+                        widget?.callback()
+                    },
                 }),
                 $el("button.threeCanvasDel", {
                     style: {
@@ -141,7 +145,7 @@ async function widgetThreeJS(node, nodeData, inputData, app) {
     const threeWrapper = $el("div.threeWrapper", {}, domsRenders);
     widget = node.addDOMWidget("threeCanvas", "custom_widget", threeWrapper, {
         getValue() {
-            return { size: threeCanvas.size };
+            return { size: threeCanvas.size, options: {currentModel: threeCanvas.currentModel} };
         },
         // setValue(v) {
         //   widget.value = v;
@@ -193,7 +197,7 @@ async function widgetThreeJS(node, nodeData, inputData, app) {
     widget.threeCanvas = threeCanvas;
     widget.threeWrapper = threeWrapper;
     widget.callback = () => {
-        threeWrapper.value = JSON.stringify(threeCanvas.size);
+        threeWrapper.value = JSON.stringify({size: threeCanvas.size, options: {currentModel: threeCanvas.currentModel}});
     };
 
     // Note: If the node is collapsed, the draw method does not work and the canvas will not update.
@@ -289,17 +293,26 @@ app.registerExtension({
                     : undefined;
 
                 const titleNode = await this.getTitle(); // need to load properties node
-
+  
+                let currentModel = null
+                try {
+                    currentModel = this?.widgets_values[2]?.options?.currentModel
+                } catch (error) {
+                    
+                }
+                // console.log(currentModel)
                 // Create widget
                 const widget = await widgetThreeJS(
                     this,
                     nodeData,
                     nodeData,
-                    app
+                    app,
+                    {currentModel}
                 );
 
-                this.title = `${this.type} [${widget.threeCanvas.size.w}x${widget.threeCanvas.size.h}]`;
-                this.onResize();
+                this.title = `${this.type} [${widget.threeCanvas.w}x${widget.threeCanvas.h}]`;
+                this?.onResize()
+                console.log("onCreate")
                 return r;
             };
 
@@ -313,15 +326,34 @@ app.registerExtension({
                      const threeCanvasId = this.widgets.findIndex(
                         (wi) => wi.name === "threeCanvas"
                     );
+                    const threeCnavasWidget = this.widgets[threeCanvasId].threeCanvas
 
                     if (threeCanvasId !== -1 && w?.widgets_values[threeCanvasId]) {
-                        // this.widgets[threeCanvasId].value =
-                        //     w.widgets_values[threeCanvasId]; // set custom widget value, saves
 
+                        const {size: sizeData, options: optionsData} =  w.widgets_values[threeCanvasId];
                         // Load serialized value size, and setSize
-                        const { w: width, h: height } = w.widgets_values[threeCanvasId]?.size;
+                        if(sizeData){
+                            const { w: width, h: height } = sizeData;
+                            if(width && height){ 
+                                threeCnavasWidget.setCanvasSize(width, height);
+                                this.title = `${this.type} [${width}x${height}]`;
+                            }
+                        }
 
-                        if(width && height) this.widgets[threeCanvasId].threeCanvas.setCanvasSize(width, height);
+                        if(optionsData && optionsData?.currentModel){
+                            const [subfolder, name] = optionsData?.currentModel.split("/")
+                            const urlData = await api.apiURL(
+                                `/view?filename=${encodeURIComponent(
+                                    name
+                                )}&type=input&subfolder=${subfolder}${app.getPreviewFormatParam()}${app.getRandParam()}`
+                              );
+                            
+                            await threeCnavasWidget.loaderGltf.load(urlData, function ( glb ) {
+                            threeCnavasWidget.clear(true)
+                            threeCnavasWidget.addModel( glb ); })
+                        }
+
+                        console.log("onConfigure")
                     }
                 }
             };
