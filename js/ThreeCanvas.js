@@ -245,9 +245,8 @@ export class ThreeCanvas {
         }
     }
 
-    setApi(api){
-        this.api = api;
-    }
+    // import api directlly break index.html preview !!
+    setApi( api ){ this.api = api; }
 
     initLoader(){
 
@@ -319,14 +318,14 @@ export class ThreeCanvas {
 
     }
 
-    addHeadTest(url = `./assets/head.glb`){
+    addHeadTest( url = `./assets/head.glb` ){
 
         const self = this;
         const scene = this.scene;
         const headModel = new URL(url, import.meta.url);
 
         let u = headModel.href;
-        this.defPath =  u.substring( 0, u.lastIndexOf('/')+1 );//;
+        this.defPath = u.substring( 0, u.lastIndexOf('/')+1 );
 
         /*const light = new THREE.PointLight( 0x0080FF, 300 );
         light.position.set(-5,5,-10)
@@ -393,7 +392,7 @@ export class ThreeCanvas {
 
     }
 
-    addObjectToScene(type, parameters = {}) {
+    /*addObjectToScene(type, parameters = {}) {
 
         const objectNew = new ThreeObject(type, parameters);
 
@@ -405,7 +404,7 @@ export class ThreeCanvas {
         this.scene.add(objectNew.object);
         this.render();
 
-    }
+    }*/
 
     setCamera( position, center, near, far ) {
 
@@ -502,6 +501,7 @@ export class ThreeCanvas {
     }
 
     setCanvasSize(w, h) {
+
         if (this.size.w === w) return;
         this.size.w = w;
         this.size.h = h;
@@ -518,15 +518,18 @@ export class ThreeCanvas {
 
         this.node.title = `${this.node.type} [${this.size.w}x${this.size.h}]`;
         this.render();
-        this.node?.onResize()
+        this.node?.onResize();
+
     }
 
     async update(widgetWidth, posY) {
+
         let w = widgetWidth - this.size.offset;
         if (this.size.w === w) return;
         this.size.w = w;
         this.size.h = w * this.size.r;
         this.needResize = true;
+
     }
 
     // Function send image to server
@@ -570,6 +573,9 @@ export class ThreeCanvas {
     }
 }
 
+
+
+/*
 class ThreeObject {
     constructor(type, parameters = {}) {
         this.type = type;
@@ -624,10 +630,10 @@ class ThreeObject {
 
     updateObject() {
         this.object.rotation.y += 0.001;
-
         const time = performance.now() / 1000;
         const scale = Math.abs(Math.sin(time)) + 10
         this.object.scale.set(scale,scale,scale)
 
     }
 }
+*/
