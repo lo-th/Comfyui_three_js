@@ -102,7 +102,7 @@ export const sobelShader = {
 export const thresholdShader = {
     uniforms: {
         tDiffuse: { value: null },
-        threshold: { value: 0.2 }
+        threshold: { value: 0.4 }
     },
     vertexShader: `
         varying vec2 vUv;
@@ -118,7 +118,8 @@ export const thresholdShader = {
 
         void main() {
             float value = texture2D(tDiffuse, vUv).r;
-            gl_FragColor = vec4(vec3(value > threshold ? 1.0 : 0.0), 1.0);
+            //gl_FragColor = vec4(vec3(value > threshold ? 1.0 : 0.0), 1.0);
+            gl_FragColor = vec4(vec3(value > threshold ? value*1.5 : 0.0), 1.0);
         }
     `
 };

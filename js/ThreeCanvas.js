@@ -6,6 +6,11 @@ import { DRACOLoader } from './lib/jsm/loaders/DRACOLoader.js';
 import { EffectComposer } from './lib/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from './lib/jsm/postprocessing/RenderPass.js';
 import { ShaderPass } from './lib/jsm/postprocessing/ShaderPass.js';
+import { SobelOperatorShader } from './lib/jsm/shaders/SobelOperatorShader.js';
+import { LuminosityShader } from './lib/jsm/shaders/LuminosityShader.js';
+import { ExposureShader } from './lib/jsm/shaders/ExposureShader.js';
+import { BrightnessContrastShader } from './lib/jsm/shaders/BrightnessContrastShader.js';
+
 import { Outline, Inline, BlackAll, sobelShader, thresholdShader } from "./lib/Toon.js";
 import { Hub } from "./lib/Hub.js";
 import { Files } from "./lib/Files.js";
@@ -42,6 +47,7 @@ export class ThreeCanvas {
         // lock scale if false
         this.autoScale = !true;
         this.autoAutoAnim = false;
+        this.useLinesComposer = true;
 
         // Views3
         this.VIEWS3 = views3
@@ -80,6 +86,7 @@ export class ThreeCanvas {
         renderer2.setSize( this.size.w, this.size.h );
         renderer2.setPixelRatio( this.pixelRatio );
         renderer2.setClearColor( 0x000000, 1 );
+        renderer1.shadowMap.enabled = false;
         renderer2.autoClear = false;
         renderer2.domElement.style.cssText = "position:absolute; margin:0; padding:0; border:1px solid red;";
         renderer2.domElement.setAttribute("view", "TOP")
@@ -123,10 +130,11 @@ export class ThreeCanvas {
         depthMaterial.displacementScale = 10
         const normalMaterial = new THREE.MeshNormalMaterial()
 
+
         // Renderers
         this.tools = [
             { type:'color', renderer: renderer1, camera: camera1, material:null },
-            { type:'lines', renderer: renderer2, camera: camera2, material:null },
+            { type:'lines', renderer: renderer2, camera: camera2, material:normalMaterial },
             { type:'depth', renderer: renderer3, camera: camera3, material:depthMaterial },
             { type:'normal', renderer: renderer4, camera: camera3, material:normalMaterial }
         ];
@@ -135,13 +143,6 @@ export class ThreeCanvas {
         this.setViews3()
 
 
-
-
-        //this.getDom(1).style.display = "none"
-        //this.getDom(2).style.display = "none"
-        //this.getDom(3).style.display = "none"
-
-        
 
         /*let m0 = new THREE.Mesh(new THREE.BoxGeometry(5,5,5))
         let b0 = new THREE.BoxHelper(m0)
@@ -380,7 +381,7 @@ export class ThreeCanvas {
         model.updateMatrixWorld(); 
 
         let b0 = new THREE.BoxHelper( model, 0x201924 );
-        this.helper.add(b0)
+        //this.helper.add(b0)
 
         b0.geometry.computeBoundingSphere()
         b0.geometry.computeBoundingBox()
@@ -388,7 +389,7 @@ export class ThreeCanvas {
         const radius = b0.geometry.boundingSphere.radius;
         const center = box.getCenter(new THREE.Vector3());
 
-        console.log( radius)
+        //console.log( radius)
 
         let lightpos = center.clone().add( new THREE.Vector3(-radius*0.3,radius*2, radius) )
 
@@ -476,6 +477,9 @@ export class ThreeCanvas {
             }
 
         })
+
+        if(this.composer) this.composer.setSize(this.size.w, this.size.h);
+
         this.needResize = false;
 
 
@@ -489,6 +493,40 @@ export class ThreeCanvas {
         this.render();
     }
 
+    initComposer(renderer){
+
+        // init only one composer
+        if(this.composer) return;
+
+        const composer = new EffectComposer(renderer);
+
+        const renderPass = new RenderPass(this.scene, this.camera);
+        composer.addPass(renderPass);
+
+        // color to grayscale conversion
+
+        const effectGrayScale = new ShaderPass( LuminosityShader );
+        composer.addPass( effectGrayScale );
+
+        const effectExposure = new ShaderPass( ExposureShader )
+        effectExposure.uniforms[ 'exposure' ].value = 0.75;
+        composer.addPass( effectExposure )
+
+        const effectSobel = new ShaderPass( SobelOperatorShader );
+        effectSobel.uniforms[ 'resolution' ].value.x = this.size.w;
+        effectSobel.uniforms[ 'resolution' ].value.y = this.size.h;
+        composer.addPass( effectSobel )
+
+        //const sobelPass = new ShaderPass(sobelShader);
+        //composer.addPass(sobelPass);
+        const thresholdPass = new ShaderPass(thresholdShader);
+        thresholdPass.uniforms[ 'threshold' ].value = 0.2;
+        composer.addPass(thresholdPass);
+
+        this.composer = composer;
+
+    }
+
     async render() {
         if (this.autoScale) this.resize();
         //this.tools.forEach((data)=>data.renderer.render(this.scene, data.camera))
@@ -497,41 +535,23 @@ export class ThreeCanvas {
         
         this.tools.forEach((data)=>{
 
+            this.scene.overrideMaterial = !data.material ? null: data.material;
+
             if( data.type !== 'color' ) this.helper.visible = false
             else if( this.withHelper ) this.helper.visible = true
 
             if( data.type === 'lines' ){ 
-                const composer = new EffectComposer(data.renderer);
 
-                const renderPass = new RenderPass(this.scene, this.camera);
-                composer.addPass(renderPass);
+                if(this.useLinesComposer){
+                    
+                    this.initComposer(data.renderer)
+                    return this.composer.render(this.scene)
 
-                const sobelPass = new ShaderPass(sobelShader);
-                composer.addPass(sobelPass);
-
-                const thresholdPass = new ShaderPass(thresholdShader);
-                composer.addPass(thresholdPass);
-                return composer.render(this.scene)
-                // const currentAutoClear = data.renderer.autoClear;
-                // const camera = this.VIEWS3 && !this.fixCamers ? data.camera : this.camera
-    
-                // data.renderer.clear( true, true, true );
-
-                // //this.scene.matrixWorldAutoUpdate = false;
-                // //this.scene.background = null;
-                
-                // this.scene.overrideMaterial = Outline;
-                // data.renderer.render( this.scene, camera );
-
-                // this.scene.overrideMaterial = Inline;
-                // data.renderer.render( this.scene, camera );
-
-                // this.scene.overrideMaterial = BlackAll;
-                // return data.renderer.render( this.scene, camera )
+                }
 
             }
 
-            this.scene.overrideMaterial = !data.material ? null: data.material; 
+            //this.scene.overrideMaterial = !data.material ? null: data.material; 
             return data.renderer.render(this.scene, this.VIEWS3 && !this.fixCamers ? data.camera : this.camera)
         })
 
