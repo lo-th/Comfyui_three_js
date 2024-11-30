@@ -10,9 +10,8 @@ const DEBUG = true;
 
 // Function create widget
 async function widgetThreeJS(node, nodeData, inputData, app, params = {}) {
-    let VIEWS3 = false
-    const d = new Date();
-                
+
+    const d = new Date();                
     const base_filenames = ["image","lines","depth","normal"].map((v)=>`${nodeData.name}${node.id}-${d.getUTCFullYear()}_${d.getUTCMonth() + 1}_${d.getUTCDate()}_${v}.png`)
 
     // Find widget stored image filename for threejs, and hide him.
@@ -29,9 +28,10 @@ async function widgetThreeJS(node, nodeData, inputData, app, params = {}) {
     }
 
     let widget = {};
-    const threeCanvas = new ThreeCanvas(node, widgeImageThree, {currentModel: params.currentModel});
+
+    const threeCanvas = new ThreeCanvas(node, widgeImageThree, params);
     threeCanvas.setApi(api);
-    threeCanvas.init(VIEWS3);
+    threeCanvas.init();
 
     // Add panel widget
     const panelWrapper = $el("div.threeCanvasPanelWrapper", {}, [
@@ -145,7 +145,7 @@ async function widgetThreeJS(node, nodeData, inputData, app, params = {}) {
     const threeWrapper = $el("div.threeWrapper", {}, domsRenders);
     widget = node.addDOMWidget("threeCanvas", "custom_widget", threeWrapper, {
         getValue() {
-            return { size: threeCanvas.size, options: {currentModel: threeCanvas.currentModel} };
+            return threeCanvas.getSavedOptions();
         },
         // setValue(v) {
         //   widget.value = v;
@@ -196,8 +196,9 @@ async function widgetThreeJS(node, nodeData, inputData, app, params = {}) {
 
     widget.threeCanvas = threeCanvas;
     widget.threeWrapper = threeWrapper;
+
     widget.callback = () => {
-        threeWrapper.value = JSON.stringify({size: threeCanvas.size, options: {currentModel: threeCanvas.currentModel}});
+        threeWrapper.value = JSON.stringify(threeCanvas.getSavedOptions());
     };
 
     // Note: If the node is collapsed, the draw method does not work and the canvas will not update.
@@ -294,23 +295,25 @@ app.registerExtension({
 
                 const titleNode = await this.getTitle(); // need to load properties node
   
-                let currentModel = null
+                let parameters = {}
+  
                 try {
-                    currentModel = this?.widgets_values[2]?.options?.currentModel
+                    parameters = {savedData: this?.widgets_values[2]}
                 } catch (error) {
                     
                 }
-                // console.log(currentModel)
+
                 // Create widget
                 const widget = await widgetThreeJS(
                     this,
                     nodeData,
                     nodeData,
                     app,
-                    {currentModel}
+                    parameters
                 );
 
-                this.title = `${this.type} [${widget.threeCanvas.w}x${widget.threeCanvas.h}]`;
+
+                this.title = `${this.type} [${widget.threeCanvas.size.w}x${widget.threeCanvas.size.h}]`;
                 this?.onResize()
                 console.log("onCreate")
                 return r;
@@ -326,12 +329,15 @@ app.registerExtension({
                      const threeCanvasId = this.widgets.findIndex(
                         (wi) => wi.name === "threeCanvas"
                     );
-                    const threeCnavasWidget = this.widgets[threeCanvasId].threeCanvas
-
+                    
                     if (threeCanvasId !== -1 && w?.widgets_values[threeCanvasId]) {
+                        // Get widget threeCanvas by Index
+                        const threeCnavasWidget = this.widgets[threeCanvasId].threeCanvas
 
-                        const {size: sizeData, options: optionsData} =  w.widgets_values[threeCanvasId];
-                        // Load serialized value size, and setSize
+                        // Get value size and options
+                        const {size: sizeData, camera: cameraData, currentModel} =  w.widgets_values[threeCanvasId];
+
+                        // Set size
                         if(sizeData){
                             const { w: width, h: height } = sizeData;
                             if(width && height){ 
@@ -340,17 +346,27 @@ app.registerExtension({
                             }
                         }
 
-                        if(optionsData && optionsData?.currentModel){
-                            const [subfolder, name] = optionsData?.currentModel.split("/")
+                        // Loading last model added
+                        if(currentModel){
+                            const [subfolder, name] = currentModel.split("/")
                             const urlData = await api.apiURL(
                                 `/view?filename=${encodeURIComponent(
                                     name
                                 )}&type=input&subfolder=${subfolder}${app.getPreviewFormatParam()}${app.getRandParam()}`
                               );
                             
-                            await threeCnavasWidget.loaderGltf.load(urlData, function ( glb ) {
-                            threeCnavasWidget.clear(true)
-                            threeCnavasWidget.addModel( glb ); })
+                            await threeCnavasWidget.loaderGltf.load(urlData, ( glb ) => {
+                                threeCnavasWidget.addModel( glb );
+
+                            // Load camera data 
+                            if( cameraData ) threeCnavasWidget.loadCameraState( cameraData )
+                                                           
+                            }, 
+                            ( data ) => {/* console.log( `Loaded data: ${data.loaded}/${data.total}` */},
+                            ( err ) => {
+                                console.log( err );
+                                threeCnavasWidget.addHeadTest();
+                            })
                         }
 
                         console.log("onConfigure")
