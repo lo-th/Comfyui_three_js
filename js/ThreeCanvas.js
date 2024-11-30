@@ -11,11 +11,22 @@ import { Files } from "./lib/Files.js";
 export class ThreeCanvas {
 
     constructor(node, widget, params ={} ) {
-        const {w = 512, h = 512, r = 1, offset = 10, currentModel = null} = params
+        const {
+            w = 512,
+            h = 512,
+            r = 1,
+            offset = 10,
+            savedData = {},
+            views3 = false,
+            fixCamers = true
+        } = params
+
+
         this.widgeImageThree = widget;
         this.node = node;
         this.size = { w, h, r, offset };
-        this.currentModel = currentModel;
+
+        this.savedData = savedData;
 
         this.objects = [];
         this.needResize = false;
@@ -28,18 +39,19 @@ export class ThreeCanvas {
         // lock scale if false
         this.autoScale = !true;
         this.autoAutoAnim = false;
+
+        // Views3
+        this.VIEWS3 = views3
+
+        // Fix camers
+        this.fixCamers = fixCamers;        
     }
 
     getDom(idx=0) {
         return this.tools[idx].renderer.domElement;
     }
 
-    init(views3 = false) {
-        // Views3
-        this.VIEWS3 = views3
-
-        // Fix camers
-        this.fixCamers = true;
+    init() {
 
         // Calculate aspect ratio
         this.aspectRatio = this.size.w / this.size.h;
@@ -173,8 +185,7 @@ export class ThreeCanvas {
         this.initLight();
         this.initLoader();
 
-        // console.log(this.currentModel)
-        if(!this.currentModel) this.addHeadTest();
+        if(!this.savedData?.currentModel) this.addHeadTest();
 
         this.render();
 
@@ -265,15 +276,20 @@ export class ThreeCanvas {
 
     }
 
-    load(){
+    async load(params = {}){
 
-        Files.load({ type:'glb', callback:this.loadEnd.bind(this) })
+        const loadData = await new Promise((res)=>{
+            Files.load({ type:'glb', callback: (content, fname, ftype) => res({content, fname, ftype}) })
+        })
 
-    }
+        if( !loadData ) {
+            console.log("Error load model!")
+            return;
+        }
 
-    async loadEnd( content, fname, ftype ){
+        const {content, fname, ftype} = loadData
 
-        this.directGlb( content, fname );
+        this.directGlb( content, fname, params );
 
         // Load file to server
         const body = new FormData();
@@ -289,8 +305,9 @@ export class ThreeCanvas {
           const data = await resp.json();
           let path = data.name;
           if (data.subfolder) path = data.subfolder + "/" + path;
-          this.currentModel = path
+          this.savedData.currentModel = path
         }
+
     }
 
     drop( e ){
@@ -314,7 +331,7 @@ export class ThreeCanvas {
     directGlb( data, name ){
 
         const self = this;
-        this.loaderGltf.parse( data, '', ( glb ) => { self.addModel( glb ); })
+        this.loaderGltf.parse( data, name, ( glb ) => { self.addModel( glb ); })
 
     }
 
@@ -339,7 +356,14 @@ export class ThreeCanvas {
         light3.position.set(0,5,5)
         scene.add( light3 );*/
 
-        this.loaderGltf.load( headModel.href, async function ( glb ) { self.addModel( glb ); })
+        this.loaderGltf.load( headModel.href, ( glb ) => {
+            this.addModel( glb );
+            // Load camera data 
+            if( this.savedData?.camera ){
+                this.loadCameraState( this.savedData.camera )
+            }
+        })
+
 
     }
 
@@ -463,7 +487,6 @@ export class ThreeCanvas {
     }
 
     async render() {
-
         if (this.autoScale) this.resize();
         //this.tools.forEach((data)=>data.renderer.render(this.scene, data.camera))
 
@@ -531,6 +554,38 @@ export class ThreeCanvas {
         this.needResize = true;
 
     }
+
+    // Get object saves property
+    getSavedOptions(){
+        return { 
+            size: this.size,
+            currentModel: this.savedData.currentModel,
+            camera: this.saveCameraState()
+        }
+    }
+
+    saveCameraState(){
+        return {
+            position: this.camera.position.clone(),
+            quaternion: this.camera.quaternion.clone(), 
+            target: this.controls.target.clone() 
+        }
+    }
+
+    loadCameraState(savesData = null){
+        if(!savesData && Object.keys(savesData).length === 0) return;
+
+        
+        this.camera.position.copy(savesData.position);
+        this.camera.quaternion.copy(savesData.quaternion);
+        this.controls.target.copy(savesData.target);
+
+        this.camera.updateMatrixWorld();
+        this.camera.updateProjectionMatrix();
+        this.controls.update();
+
+        this.render()
+    }    
 
     // Function send image to server
     async sendFileToServer(fileName, idx) {
