@@ -3,7 +3,10 @@ import * as THREE from "./lib/three.module.js";
 import { OrbitControls } from "./lib/jsm/controls/OrbitControls.js";
 import { GLTFLoader } from './lib/jsm/loaders/GLTFLoader.js';
 import { DRACOLoader } from './lib/jsm/loaders/DRACOLoader.js';
-import { Outline, Inline, BlackAll } from "./lib/Toon.js";
+import { EffectComposer } from './lib/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from './lib/jsm/postprocessing/RenderPass.js';
+import { ShaderPass } from './lib/jsm/postprocessing/ShaderPass.js';
+import { Outline, Inline, BlackAll, sobelShader, thresholdShader } from "./lib/Toon.js";
 import { Hub } from "./lib/Hub.js";
 import { Files } from "./lib/Files.js";
 
@@ -498,22 +501,33 @@ export class ThreeCanvas {
             else if( this.withHelper ) this.helper.visible = true
 
             if( data.type === 'lines' ){ 
-                const currentAutoClear = data.renderer.autoClear;
-                const camera = this.VIEWS3 && !this.fixCamers ? data.camera : this.camera
+                const composer = new EffectComposer(data.renderer);
+
+                const renderPass = new RenderPass(this.scene, this.camera);
+                composer.addPass(renderPass);
+
+                const sobelPass = new ShaderPass(sobelShader);
+                composer.addPass(sobelPass);
+
+                const thresholdPass = new ShaderPass(thresholdShader);
+                composer.addPass(thresholdPass);
+                return composer.render(this.scene)
+                // const currentAutoClear = data.renderer.autoClear;
+                // const camera = this.VIEWS3 && !this.fixCamers ? data.camera : this.camera
     
-                data.renderer.clear( true, true, true );
+                // data.renderer.clear( true, true, true );
 
-                //this.scene.matrixWorldAutoUpdate = false;
-                //this.scene.background = null;
+                // //this.scene.matrixWorldAutoUpdate = false;
+                // //this.scene.background = null;
                 
-                this.scene.overrideMaterial = Outline;
-                data.renderer.render( this.scene, camera );
+                // this.scene.overrideMaterial = Outline;
+                // data.renderer.render( this.scene, camera );
 
-                this.scene.overrideMaterial = Inline;
-                data.renderer.render( this.scene, camera );
+                // this.scene.overrideMaterial = Inline;
+                // data.renderer.render( this.scene, camera );
 
-                this.scene.overrideMaterial = BlackAll;
-                return data.renderer.render( this.scene, camera )
+                // this.scene.overrideMaterial = BlackAll;
+                // return data.renderer.render( this.scene, camera )
 
             }
 
