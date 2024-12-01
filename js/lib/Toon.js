@@ -51,7 +51,8 @@ export const BlackAll = new THREE.MeshBasicMaterial({color:0x000000});
 export const sobelShader = {
     uniforms: {
         tDiffuse: { value: null },  // Входное изображение
-        resolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) }
+        resolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
+        lineaType: {value: 0}
     },
     vertexShader: `
         varying vec2 vUv;
@@ -64,6 +65,7 @@ export const sobelShader = {
         varying vec2 vUv;
         uniform sampler2D tDiffuse;
         uniform vec2 resolution;
+        uniform int lineaType;
 
         void main() {
             vec2 texel = vec2(1.0 / resolution.x, 1.0 / resolution.y);
@@ -71,13 +73,35 @@ export const sobelShader = {
             // sobel filter
             float kernelX[9];
             float kernelY[9];
-            kernelX[0] = -1.0; kernelX[1] = 0.0; kernelX[2] = 1.0;
-            kernelX[3] = -2.0; kernelX[4] = 0.0; kernelX[5] = 2.0;
-            kernelX[6] = -1.0; kernelX[7] = 0.0; kernelX[8] = 1.0;
 
-            kernelY[0] = -1.0; kernelY[1] = -2.0; kernelY[2] = -1.0;
-            kernelY[3] = 0.0;  kernelY[4] = 0.0;  kernelY[5] = 0.0;
-            kernelY[6] = 1.0;  kernelY[7] = 2.0;  kernelY[8] = 1.0;
+            if(lineaType == 2){
+                kernelX[0] = -1.0; kernelX[1] = 0.0; kernelX[2] = 1.0;
+                kernelX[3] = -1.0; kernelX[4] = 0.0; kernelX[5] = 1.0;
+                kernelX[6] = -1.0; kernelX[7] = 0.0; kernelX[8] = 1.0;
+
+                kernelY[0] = -1.0; kernelY[1] = -1.0; kernelY[2] = -1.0;
+                kernelY[3] = 0.0;  kernelY[4] = 0.0;  kernelY[5] = 0.0;
+                kernelY[6] = 1.0;  kernelY[7] = 1.0;  kernelY[8] = 1.0;
+
+            } else if (lineaType == 1){
+                kernelX[0] = 3.0; kernelX[1] = 10.0; kernelX[2] = 3.0;
+                kernelX[3] = 0.0; kernelX[4] = 0.0; kernelX[5] = 0.0;
+                kernelX[6] = -3.0; kernelX[7] = -10.0; kernelX[8] = -3.0;
+
+                kernelY[0] = 3.0; kernelY[1] = 0.0; kernelY[2] = -3.0;
+                kernelY[3] = 10.0;  kernelY[4] = 0.0;  kernelY[5] = -10.0;
+                kernelY[6] = 3.0;  kernelY[7] = 0.0;  kernelY[8] = -3.0; 
+
+            } else {
+                kernelX[0] = -1.0; kernelX[1] = 0.0; kernelX[2] = 1.0;
+                kernelX[3] = -2.0; kernelX[4] = 0.0; kernelX[5] = 2.0;
+                kernelX[6] = -1.0; kernelX[7] = 0.0; kernelX[8] = 1.0;
+
+                kernelY[0] = -1.0; kernelY[1] = -2.0; kernelY[2] = -1.0;
+                kernelY[3] = 0.0;  kernelY[4] = 0.0;  kernelY[5] = 0.0;
+                kernelY[6] = 1.0;  kernelY[7] = 2.0;  kernelY[8] = 1.0;
+            }
+
 
             vec3 xsample[9];
             for (int i = 0; i < 3; i++) {

@@ -11,8 +11,14 @@ const DEBUG = true;
 // Function create widget
 async function widgetThreeJS(node, nodeData, inputData, app, params = {}) {
 
-    const d = new Date();                
-    const base_filenames = ["image","lines","depth","normal"].map((v)=>`${nodeData.name}${node.id}-${d.getUTCFullYear()}_${d.getUTCMonth() + 1}_${d.getUTCDate()}_${v}.png`)
+    const d = new Date(); 
+    const canvasNames = [
+        {name:"image", color: "black"},
+        {name:"lines", color: "red"},
+        {name:"depth", color: "yellow"},
+        {name:"normal", color: "#8080ff"}
+    ];  
+    const base_filenames = canvasNames.map((data)=>`${nodeData.name}${node.id}-${d.getUTCFullYear()}_${d.getUTCMonth() + 1}_${d.getUTCDate()}_${data.name}.png`)
 
     // Find widget stored image filename for threejs, and hide him.
     const widgeImageThree = node.widgets.find((w) => w.name === "imageThreejs");
@@ -29,9 +35,10 @@ async function widgetThreeJS(node, nodeData, inputData, app, params = {}) {
 
     let widget = {};
 
+    
     const threeCanvas = new ThreeCanvas(node, widgeImageThree, params);
     threeCanvas.setApi(api);
-    threeCanvas.init();
+    threeCanvas.init(canvasNames);
 
     // Add panel widget
     const panelWrapper = $el("div.threeCanvasPanelWrapper", {}, [
@@ -106,7 +113,7 @@ async function widgetThreeJS(node, nodeData, inputData, app, params = {}) {
                             threeCanvas.VIEWS3 = !threeCanvas.VIEWS3
                             panelWidget.element.querySelector(".threeCanvasViews3_camerafix").style.display = threeCanvas.VIEWS3 ? "block": "none"
                             // threeCanvas.fixCamers = threeCanvas.VIEWS3
-                            threeCanvas.setViews3()
+                            threeCanvas.setViews3(threeCanvas.wrappers)
                         },
                 }),
                 $el("input.threeCanvasViews3_camerafix", {
@@ -139,10 +146,9 @@ async function widgetThreeJS(node, nodeData, inputData, app, params = {}) {
     };
     // end - Panel
 
-    const domsRenders =[threeCanvas.getDom(), threeCanvas.getDom(1),threeCanvas.getDom(2),threeCanvas.getDom(3)]
 
     // Add widget threeCanvas
-    const threeWrapper = $el("div.threeWrapper", {}, domsRenders);
+    const threeWrapper = $el("div.threeWrapper", {}, threeCanvas.wrappers);
     widget = node.addDOMWidget("threeCanvas", "custom_widget", threeWrapper, {
         getValue() {
             return threeCanvas.getSavedOptions();
@@ -160,30 +166,30 @@ async function widgetThreeJS(node, nodeData, inputData, app, params = {}) {
         const w = !threeCanvas.VIEWS3 ? widgetWidth - 25: (widgetWidth - 25)/2;
         const aspect_ratio = threeCanvas.size.h / threeCanvas.size.w;
 
-        Object.assign(threeCanvas.getDom().style, {
+        Object.assign(threeCanvas.getWrapper().style, {
             width: w + "px",
             height: w * aspect_ratio + "px",
         });
 
         if( threeCanvas.VIEWS3 ){
-            Object.assign(threeCanvas.getDom(1).style, {
+            Object.assign(threeCanvas.getWrapper(1).style, {
                 width: w + "px",
                 height: w * aspect_ratio + "px",
                 left: w + 10 + "px"
             });
 
-            Object.assign(threeCanvas.getDom(2).style, {
+            Object.assign(threeCanvas.getWrapper(2).style, {
                 width: w + "px",
                 height: w * aspect_ratio + "px",
-                top: parseFloat(threeCanvas.getDom().style.height) + 10 + "px"
+                top: parseFloat(threeCanvas.getWrapper().style.height) + 10 + "px"
 
             });
 
-            Object.assign(threeCanvas.getDom(3).style, {
+            Object.assign(threeCanvas.getWrapper(3).style, {
                 width: w + "px",
                 height: w * aspect_ratio + "px",
                 left: w + 10 + "px",
-                top: parseFloat(threeCanvas.getDom().style.height) + 10 + "px"
+                top: parseFloat(threeCanvas.getWrapper().style.height) + 10 + "px"
 
             });            
         }
