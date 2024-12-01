@@ -14,6 +14,7 @@ import { BrightnessContrastShader } from './lib/jsm/shaders/BrightnessContrastSh
 import { Outline, Inline, BlackAll, sobelShader, thresholdShader } from "./lib/Toon.js";
 import { Hub } from "./lib/Hub.js";
 import { Files } from "./lib/Files.js";
+import { Tools } from "./lib/Tools.js";
 
 // Class ThreeCanvas
 export class ThreeCanvas {
@@ -274,6 +275,8 @@ export class ThreeCanvas {
 
     clear(b){
 
+        Tools.reset();
+
         if( this.model ) this.scene.remove(this.model);
         this.helper.children = [];
         if(b) this.render();
@@ -378,6 +381,15 @@ export class ThreeCanvas {
         const model = glb.scene || glb.scenes[0];
         const clips = glb.animations || [];
 
+        // Apply automorph to model //! 
+        // Convention model name is ModelNale__M__TypeOfMorph
+        Tools.autoMorph( model );
+
+        // active shadow 
+        Tools.autoShadow( model );
+
+        
+
         model.updateMatrixWorld(); 
 
         let b0 = new THREE.BoxHelper( model, 0x201924 );
@@ -389,20 +401,15 @@ export class ThreeCanvas {
         const radius = b0.geometry.boundingSphere.radius;
         const center = box.getCenter(new THREE.Vector3());
 
-        //console.log( radius)
+        // test morph
+        //console.log( Tools.MorphModel )
+        //Tools.setMorph(Tools.MorphModel.face,'Smile_Open', 1)
 
         let lightpos = center.clone().add( new THREE.Vector3(-radius*0.3,radius*2, radius) )
 
         let pos = center.clone().add( new THREE.Vector3(0,0,radius*2) )
         let near = radius*0.5;
         let far = radius * 4;
-
-        model.traverse( ( child ) => {
-            if ( child.isMesh ){ 
-                child.receiveShadow = true;
-                child.castShadow = true;
-            }
-        })
 
         this.scene.add(model);
         this.model = model;
