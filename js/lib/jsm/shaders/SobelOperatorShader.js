@@ -16,7 +16,8 @@ const SobelOperatorShader = {
 	uniforms: {
 
 		'tDiffuse': { value: null },
-		'resolution': { value: new Vector2() }
+		'resolution': { value: new Vector2() },
+		'lineType': { value: 0 }
 
 	},
 
@@ -37,6 +38,7 @@ const SobelOperatorShader = {
 		uniform sampler2D tDiffuse;
 		uniform vec2 resolution;
 		varying vec2 vUv;
+		uniform int lineType;
 
 		void main() {
 
@@ -44,9 +46,20 @@ const SobelOperatorShader = {
 
 		// kernel definition (in glsl matrices are filled in column-major order)
 
-			const mat3 Gx = mat3( -1, -2, -1, 0, 0, 0, 1, 2, 1 ); // x direction kernel
-			const mat3 Gy = mat3( -1, 0, 1, -2, 0, 2, -1, 0, 1 ); // y direction kernel
+		// Sobel
+		mat3 Gx = mat3( -1, -2, -1, 0, 0, 0, 1, 2, 1 ); // x direction kernel
+		mat3 Gy = mat3( -1, 0, 1, -2, 0, 2, -1, 0, 1 ); // y direction kernel
 
+		if(lineType == 1){
+			// Prewitt
+			Gx = mat3( -1, -1, -1, 0, 0, 0, 1, 1, 1 ); // x direction kernel
+			Gy = mat3( -1, 0, 1, -1, 0, 1, -1, 0, 1 ); // y direction kernel
+
+        } else if (lineType == 2){
+			// Scharr
+			Gx = mat3( -3, 0, 3, -10, 0, 10, -3, 0, 3 ); // x direction kernel
+			Gy = mat3( -3, -10, -3, 0, 0, 0, 3, 10, 3 ); // y direction kernel		 
+		}
 		// fetch the 3x3 neighbourhood of a fragment
 
 		// first column
