@@ -9,31 +9,53 @@
         <meta name="publisher" content="lo-th"/>
 		<title>THREE DIRECT</title>
 		<meta name="description" content="test three view"/>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+		<link rel="stylesheet" type="text/css" href="../../../../user.css" />
+		<link rel="stylesheet" type="text/css" href="../../../../materialdesignicons.min.css" />
+		<script type="module" crossorigin src="../../../../assets/index-B6dYHNhg.js"></script>
+		<link rel="stylesheet" crossorigin href="../../../../extensions/Comfyui_three_js/css/styles.css">
+		<style>
+			.threeWrapper {
+				position: relative;
+				top: 30px;
+			}
+		</style>		
 		
 	</head>
 	<body style="background-color:#000; margin:0; padding:0; overflow:hidden;">
 		
 		<script type="module">
+		    import { ThreeCanvas } from '../../../../extensions/Comfyui_three_js/ThreeCanvas.js'
+			const canvasNames = [
+				{name:"image", color: "black"},
+				{name:"lines", color: "red"},
+				{name:"depth", color: "yellow"},
+				{name:"normal", color: "#8080ff"}
+			];  
 
-		    import { ThreeCanvas } from './ThreeCanvas.js'
+			// Clear other
+			Array.from(document.querySelectorAll("[class*=comfy]")).map((el)=>el.remove())
 
-		    const threeCanvas = new ThreeCanvas(null, null, {views3:true});
-		    threeCanvas.init(true);
+		    const threeCanvas = new ThreeCanvas(null, null, {views3: true});
+		    threeCanvas.init(canvasNames);
 
-		    let dom0 = threeCanvas.getDom(0);
-		    let dom1 = threeCanvas.getDom(1);
-		    let dom2 = threeCanvas.getDom(2);
-		    let dom3 = threeCanvas.getDom(3);
-		    dom1.style.left = threeCanvas.size.w + 'px';
-		    dom2.style.top = threeCanvas.size.h + 'px';
-		    dom3.style.left = threeCanvas.size.w + 'px';
-		    dom3.style.top = threeCanvas.size.h + 'px';
+			const mainWrapper = document.createElement("div")
+			mainWrapper.className = "threeWrapper"
 
-		    document.body.appendChild(dom0);
-		    document.body.appendChild(dom1);
-		    document.body.appendChild(dom2);
-		    document.body.appendChild(dom3);
+		    threeCanvas.wrappers[0].style.left = 0 + 'px';
+		    threeCanvas.wrappers[1].style.left = threeCanvas.size.w + 'px';
 
+		    threeCanvas.wrappers[2].style.left = 0 + 'px';
+		    threeCanvas.wrappers[2].style.top = threeCanvas.size.h + 'px';
+
+			threeCanvas.wrappers[3].style.left = threeCanvas.size.w + 'px';
+		    threeCanvas.wrappers[3].style.top = threeCanvas.size.h + 'px';
+
+			threeCanvas.wrappers.map((w)=>{
+				mainWrapper.appendChild(w)
+			})
+
+		    document.body.appendChild(mainWrapper);
 		</script>
 	</body>
 </html>

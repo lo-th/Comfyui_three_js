@@ -42,6 +42,14 @@ import folder_paths
 DEBUG = True
 THREEVIEW_DICT = {}  # ThreeView dict instances
 
+@PromptServer.instance.routes.get("/api/lth/")
+async def indexPage(request):
+    pathIndex = os.path.join(os.path.dirname(os.path.realpath(__file__)), "js", "index.html")
+    response = web.FileResponse(pathIndex)
+    response.headers['Cache-Control'] = 'no-cache'
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response    
 
 @PromptServer.instance.routes.post("/lth/save_complete")
 async def checkSaveImage(request):

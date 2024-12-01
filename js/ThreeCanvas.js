@@ -1,4 +1,3 @@
-//import { api } from "../../scripts/api.js";
 import * as THREE from "./lib/three.module.js";
 import { OrbitControls } from "./lib/jsm/controls/OrbitControls.js";
 import { GLTFLoader } from './lib/jsm/loaders/GLTFLoader.js';
@@ -15,6 +14,8 @@ import { Outline, Inline, BlackAll, sobelShader, thresholdShader } from "./lib/T
 import { Hub } from "./lib/Hub.js";
 import { Files } from "./lib/Files.js";
 import { Tools } from "./lib/Tools.js";
+
+import { $el } from "../../scripts/ui.js";
 
 // Class ThreeCanvas
 export class ThreeCanvas {
@@ -61,8 +62,54 @@ export class ThreeCanvas {
         return this.tools[idx].renderer.domElement;
     }
 
-    init() {
+    getWrapper(idx=0){
+        return this.wrappers[idx]
+    }
 
+    createWrappers(canvasNames){
+        // Operators "Sobel", "Scharr", "Prewitt"
+        const linesOperators = ["Sobel", "Prewitt", "Scharr"];
+        const listLines = $el("select.linesMethod_box",{
+            style: {
+                fontSize: "0.5rem",
+                color: "var(--p-gray-300)",
+                position: "absolute",
+                opacity: 0.7,
+                gap: "3px",
+                top: "-15px",
+                outline: 0
+            },
+            onchange: (e)=> {
+                this.sobelPassRadio = e.target.value
+                this.render()
+            },
+            title: "Selectd operator for lines"
+        }, linesOperators.map((val, idx)=> $el("option", {
+                    style: { fontSize: "1rem" },
+                    value: idx,
+                    textContent: val,
+                    selected: val === "Sobel",
+                   
+                }))
+        )
+
+        // Wrapper
+        const wrapperCanvas = canvasNames.map((data, idx)=> {
+
+            const wrapper = $el(`div.wrapperThreeViewCanvas.threeview_wrapper_${data.name}`, {
+                style: { borderColor: data.color },
+            });
+
+            if(idx === 1) wrapper.append(listLines)
+            wrapper.append(this.getDom(idx))
+
+            return wrapper
+        })
+        
+        return wrapperCanvas
+    }
+
+    init(canvasNames) {
         // Calculate aspect ratio
         this.aspectRatio = this.size.w / this.size.h;
 
@@ -71,43 +118,43 @@ export class ThreeCanvas {
 
         // Renderer setup 1  COLOR
         const renderer1 = new THREE.WebGLRenderer({ antialias: true, alpha: false });
-        renderer1.setSize( this.size.w, this.size.h );
+        renderer1.setSize( this.size.w, this.size.h, false );
         renderer1.setPixelRatio( this.pixelRatio );
         renderer1.setClearColor( 0x000000, 1 );
         renderer1.shadowMap.enabled = true;
         renderer1.toneMapping = THREE.ACESFilmicToneMapping;
         renderer1.toneMappingExposure = 1;
         //renderer1.outputColorSpace = THREE.SRGBColorSpace;
-        renderer1.domElement.style.cssText = "position:absolute; margin:0; padding:0; border:1px solid black;";
+        // renderer1.domElement.style.cssText = "position:absolute; margin:0; padding:0; border:1px solid black;";
         renderer1.domElement.setAttribute("view", "LEFT")
         renderer1.domElement.classList.add("threeview_renderer")
         
         // Renderer setup 2  LINES
         const renderer2 = new THREE.WebGLRenderer({ antialias: true, alpha: false });
-        renderer2.setSize( this.size.w, this.size.h );
+        renderer2.setSize( this.size.w, this.size.h, false );
         renderer2.setPixelRatio( this.pixelRatio );
         renderer2.setClearColor( 0x000000, 1 );
         renderer1.shadowMap.enabled = false;
         renderer2.autoClear = false;
-        renderer2.domElement.style.cssText = "position:absolute; margin:0; padding:0; border:1px solid red;";
+        // renderer2.domElement.style.cssText = "position:absolute; margin:0; padding:0; border:1px solid red;";
         renderer2.domElement.setAttribute("view", "TOP")
         renderer2.domElement.classList.add("threeview_renderer")        
 
         // Renderer setup 3  DEPTH
         const renderer3 = new THREE.WebGLRenderer({ antialias: true, alpha: false });
-        renderer3.setSize( this.size.w, this.size.h );
+        renderer3.setSize( this.size.w, this.size.h, false );
         renderer3.setPixelRatio( this.pixelRatio );
         renderer3.setClearColor( 0x000000, 1 );
-        renderer3.domElement.style.cssText = "position:absolute; margin:0; padding:0; border:1px solid yellow;"; 
+        // renderer3.domElement.style.cssText = "position:absolute; margin:0; padding:0; border:1px solid yellow;"; 
         renderer3.domElement.setAttribute("view", "FRONT") 
         renderer3.domElement.classList.add("threeview_renderer")   
 
         // Renderer setup 4  NORMAL
         const renderer4 = new THREE.WebGLRenderer({ antialias: true, alpha: false });
-        renderer4.setSize( this.size.w, this.size.h );
+        renderer4.setSize( this.size.w, this.size.h, false );
         renderer4.setPixelRatio( this.pixelRatio );
         renderer4.setClearColor( 0x8080ff, 1 );
-        renderer4.domElement.style.cssText = "position:absolute; margin:0; padding:0; border:1px solid #8080ff;"; 
+        // renderer4.domElement.style.cssText = "position:absolute; margin:0; padding:0; border:1px solid #8080ff;"; 
         renderer4.domElement.setAttribute("view", "FRONT") 
         renderer4.domElement.classList.add("threeview_renderer")             
 
@@ -126,6 +173,10 @@ export class ThreeCanvas {
         camera3.position.set(0, 0, 5); // front
         camera3.lookAt(0, 0, 0);
 
+        // Camera setup 4        
+        const camera4 = new THREE.PerspectiveCamera(this.fov, this.size.r, 0.1, 10);
+        camera3.position.set(0, 0, 5); // front
+        camera3.lookAt(0, 0, 0);
 
         const depthMaterial = new THREE.MeshDepthMaterial()
         depthMaterial.displacementScale = 10
@@ -135,15 +186,16 @@ export class ThreeCanvas {
         // Renderers
         this.tools = [
             { type:'color', renderer: renderer1, camera: camera1, material:null },
-            { type:'lines', renderer: renderer2, camera: camera2, material:normalMaterial },
+            { type:'lines', renderer: renderer2, camera: camera2, material: null }, // delete normal map incorrect show lines
             { type:'depth', renderer: renderer3, camera: camera3, material:depthMaterial },
-            { type:'normal', renderer: renderer4, camera: camera3, material:normalMaterial }
+            { type:'normal', renderer: renderer4, camera: camera4, material:normalMaterial }
         ];
+
+        // Create wrappers for canvases
+        this.wrappers = this.createWrappers(canvasNames)
 
         // Views3
         this.setViews3()
-
-
 
         /*let m0 = new THREE.Mesh(new THREE.BoxGeometry(5,5,5))
         let b0 = new THREE.BoxHelper(m0)
@@ -151,8 +203,6 @@ export class ThreeCanvas {
         let b1 = new THREE.BoxHelper(m1, 0xFF0000 )
         scene.add(b0, b1)*/
 
-
-        
 
         const controls = new OrbitControls( camera1, renderer1.domElement );
         controls.enableDamping = false;
@@ -174,8 +224,6 @@ export class ThreeCanvas {
 
         // hub for all setting
         this.hub = new Hub();
-        
-
 
         this.camera = camera1;
         this.controls = controls;
@@ -249,16 +297,10 @@ export class ThreeCanvas {
 
     }
 
-    setViews3(){        
-        if(this.VIEWS3){            
-            this.getDom(1).style.display = "block";
-            this.getDom(2).style.display = "block";
-            this.getDom(3).style.display = "block";
-        } else {
-            this.getDom(1).style.display = "none";
-            this.getDom(2).style.display = "none";
-            this.getDom(3).style.display = "none";
-        }
+    setViews3(){
+        this.wrappers.slice(1).map((v)=> Object.assign(v.style, {
+            display: this.VIEWS3 ? "block" : "none"
+        }))
     }
 
     // import api directlly break index.html preview !!
@@ -337,8 +379,7 @@ export class ThreeCanvas {
 
     directGlb( data, name ){
 
-        const self = this;
-        this.loaderGltf.parse( data, name, ( glb ) => { self.addModel( glb ); })
+        this.loaderGltf.parse( data, name, ( glb ) => { this.addModel( glb ); })
 
     }
 
@@ -388,7 +429,8 @@ export class ThreeCanvas {
         // active shadow 
         Tools.autoShadow( model );
 
-        
+        // [BUG] Set position, when delete model and add again, position unknown and no visible model
+        model.position.set(0,0,0)
 
         model.updateMatrixWorld(); 
 
@@ -476,7 +518,7 @@ export class ThreeCanvas {
         
         this.tools.map((data)=>{
             const {renderer, camera} = data
-            renderer.setSize(this.size.w, this.size.h)
+            renderer.setSize(this.size.w, this.size.h, false)
 
             if(camera){
                 camera.aspect = this.size.r;
@@ -500,10 +542,14 @@ export class ThreeCanvas {
         this.render();
     }
 
-    initComposer(renderer){
-
+    initComposer(renderer){        
+        
         // init only one composer
-        if(this.composer) return;
+        if(this.composer){
+            // Set changed line type
+            this.effectSobel.uniforms.lineType.value = this?.sobelPassRadio ?? 0
+            return;
+        } 
 
         const composer = new EffectComposer(renderer);
 
@@ -522,10 +568,13 @@ export class ThreeCanvas {
         const effectSobel = new ShaderPass( SobelOperatorShader );
         effectSobel.uniforms[ 'resolution' ].value.x = this.size.w;
         effectSobel.uniforms[ 'resolution' ].value.y = this.size.h;
+
+        this.effectSobel = effectSobel
         composer.addPass( effectSobel )
 
-        //const sobelPass = new ShaderPass(sobelShader);
-        //composer.addPass(sobelPass);
+        // this.effectSobel = new ShaderPass(sobelShader);        
+        // composer.addPass(this.effectSobel);
+
         const thresholdPass = new ShaderPass(thresholdShader);
         thresholdPass.uniforms[ 'threshold' ].value = 0.2;
         composer.addPass(thresholdPass);
@@ -541,6 +590,7 @@ export class ThreeCanvas {
         if(!this.hub.ready) this.hub.add(this.getDom(0))
         
         this.tools.forEach((data)=>{
+            const camera = this.VIEWS3 && !this.fixCamers ? data.camera : this.camera
 
             this.scene.overrideMaterial = !data.material ? null: data.material;
 
@@ -559,7 +609,8 @@ export class ThreeCanvas {
             }
 
             //this.scene.overrideMaterial = !data.material ? null: data.material; 
-            return data.renderer.render(this.scene, this.VIEWS3 && !this.fixCamers ? data.camera : this.camera)
+            return data.renderer.render(this.scene, camera)
+
         })
 
     }
@@ -573,7 +624,7 @@ export class ThreeCanvas {
 
         this.tools.map((data)=>{
             const {renderer, camera} = data
-            renderer.setSize(this.size.w, this.size.h)
+            renderer.setSize(this.size.w, this.size.h, false)
             if(camera){
                 camera.aspect = this.size.r;
                 camera.updateProjectionMatrix();
