@@ -1,4 +1,4 @@
-//import { api } from "../../scripts/api.js";
+import { api as comfyuiAPI } from "../../scripts/api.js";
 import * as THREE from "./lib/three.module.js";
 import { OrbitControls } from "./lib/jsm/controls/OrbitControls.js";
 import { GLTFLoader } from './lib/jsm/loaders/GLTFLoader.js';
@@ -63,49 +63,39 @@ export class ThreeCanvas {
     createWrappers(canvasNames){
         // Operators "Sobel", "Scharr", "Prewitt"
         const linesOperators = ["Sobel", "Scharr", "Prewitt"];
-        const radioLines = $el("div.linesMethod_box",{
+        const listLines = $el("select.linesMethod_box",{
             style: {
-                fontSize: "0.4rem",
-                display: "flex",
-                alignItems: "center",
-                userSelect: "none",
+                fontSize: "0.5rem",
                 color: "var(--p-gray-300)",
                 position: "absolute",
-                accentColor: "var(--p-green-500)",
-                opacity: .7,
+                opacity: 0.7,
                 gap: "3px",
                 top: "-15px",
-                textAlign: "center"
+                outline: 0
             },
-        }, linesOperators.map((val, idx)=> $el("label", {style: {display: "flex", alignItems:"center"}}, [$el("input", { 
-                    style: {width: "10px", margin: "0px 2px"},
-                    name: "radioLines",
-                    type: "radio",
+            onchange: (e)=> {
+                this.sobelPassRadio = e.target.value
+                this.render()
+            },
+            title: "Selectd operator for lines"
+        }, linesOperators.map((val, idx)=> $el("option", {
+                    style: { fontSize: "1rem" },
                     value: idx,
-                    checked: val === "Sobel",
-                    onchange: (e)=> this.changeLines(e.target.value)
-                }),$el("span", {textContent: val})]))
+                    textContent: val,
+                    selected: val === "Sobel",
+                   
+                }))
         )
 
         // Wrapper
         const wrapperCanvas = canvasNames.map((data, idx)=> {
 
-            const dom = this.getDom(idx);
-            dom.style.width = "100%";
-
             const wrapper = $el(`div.wrapperThreeViewCanvas.threeview_wrapper_${data.name}`, {
-                style: {
-                    position: "absolute",
-                    margin: "0px",
-                    padding: "0px",
-                    border: `1px solid ${data.color}`,
-                    display: "block",
-                    touchAction: "none",
-                },
+                style: { borderColor: data.color },
             });
 
-            if(idx === 1) wrapper.append(radioLines)
-            wrapper.append(dom)
+            if(idx === 1) wrapper.append(listLines)
+            wrapper.append(this.getDom(idx))
 
             return wrapper
         })
@@ -529,14 +519,6 @@ export class ThreeCanvas {
         requestAnimationFrame(this.animate.bind(this));
         this.objects.forEach((o) => o.updateObject());
         this.render();
-    }
-
-
-    changeLines(v){
-        console.log(v)
-        this.sobelPassRadio = v
-        this.render()
-
     }
 
     async render() {

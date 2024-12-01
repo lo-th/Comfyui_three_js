@@ -1,5 +1,6 @@
 import { app } from "../../scripts/app.js";
 import { api } from "../../scripts/api.js";
+import { addStylesheet } from "../../scripts/utils.js";
 //import * as THREE from "./lib/three.module.js";
 //import { OrbitControls } from "./lib/OrbitControls.js";
 import { $el } from "../../scripts/ui.js";
@@ -44,41 +45,19 @@ async function widgetThreeJS(node, nodeData, inputData, app, params = {}) {
     const panelWrapper = $el("div.threeCanvasPanelWrapper", {}, [
         $el(
             "div.threeCanvasPanel",
-            {
-                style: {
-                    display: "flex",
-                    padding: "0px",
-                    margin: "0px",
-                    background: "#5a5a5a",
-                    minHeight: "30px",
-                    justifyContent: "flex-start",
-                    alignItems: "center",
-                    gap: "2px",
-                },
-            },
             [
-                $el("button.threeCanvasAdd", {
-                    style: {
-                        padding: "3px",
-                    },
+                $el("button.threeCanvasButton.threeCanvasAdd", {
                     textContent: "Load",
                     onclick: (e) => {
                         threeCanvas.load()
                         widget?.callback()
                     },
                 }),
-                $el("button.threeCanvasDel", {
-                    style: {
-                        padding: "3px",
-                        color: "red",
-                    },
+                $el("button.threeCanvasButton.threeCanvasDel", {
                     textContent: "X",
                     onclick: (e) => threeCanvas.clear(true),
                 }),
-                $el("button.threeCanvasSize", {
-                    style: {
-                        padding: "3px",
-                    },
+                $el("button.threeCanvasButton.threeCanvasSize", {
                     textContent: "Canvas size",
                     onclick: (e) => {
                         try {
@@ -100,14 +79,8 @@ async function widgetThreeJS(node, nodeData, inputData, app, params = {}) {
                     },
                 }),
                 $el("div.threeCanvasViews3Box", {
-                    style: {
-                    display: "flex",
-                }
             },[
-                    $el("button.threeCanvasViews3", {
-                        style: {
-                            padding: "3px",
-                        },
+                    $el("button.threeCanvasButton.threeCanvasViews3", {
                         textContent: "All Views",
                         onclick: (e) => {
                             threeCanvas.VIEWS3 = !threeCanvas.VIEWS3
@@ -153,9 +126,6 @@ async function widgetThreeJS(node, nodeData, inputData, app, params = {}) {
         getValue() {
             return threeCanvas.getSavedOptions();
         },
-        // setValue(v) {
-        //   widget.value = v;
-        // },
     });
 
     const origDraw = widget.draw;
@@ -287,6 +257,12 @@ async function widgetThreeJS(node, nodeData, inputData, app, params = {}) {
 
 app.registerExtension({
     name: "Three View",
+    async init(){
+
+        // Add css styles
+        addStylesheet("css/styles.css", import.meta.url);
+
+    },
     async beforeRegisterNodeDef(nodeType, nodeData, app) {
         if (nodeType.comfyClass === "ThreeView") {
             nodeType.prototype.onExecuted = async function (message) {
