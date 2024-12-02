@@ -123,6 +123,119 @@ export const sobelShader = {
     `
 };
 
+// Canny edge detection shader
+export const cannyEdgeShader = {
+    uniforms: {
+        tDiffuse: { value: null },
+        resolution: { value: new THREE.Vector2() },
+        lowThreshold: { value: 0.1 },
+        highThreshold: { value: 0.3 }
+    },
+    vertexShader: `
+        varying vec2 vUv;
+        void main() {
+            vUv = uv;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+    `,
+    fragmentShader: `
+        // Canny edge detection shader (copy the GLSL code here from the previous implementation)
+        precision highp float;
+
+        uniform sampler2D tDiffuse;
+        uniform vec2 resolution;
+        uniform float lowThreshold;
+        uniform float highThreshold;
+
+        varying vec2 vUv;
+
+        const float kernel[9] = float[9](
+            1.0 / 16.0, 2.0 / 16.0, 1.0 / 16.0,
+            2.0 / 16.0, 4.0 / 16.0, 2.0 / 16.0,
+            1.0 / 16.0, 2.0 / 16.0, 1.0 / 16.0
+        );
+
+        void main() {
+            vec2 texel = vec2(1.0 / resolution.x, 1.0 / resolution.y);
+
+            vec3 blurred = vec3(0.0);
+            int k = 0;
+            for (int i = -1; i <= 1; i++) {
+                for (int j = -1; j <= 1; j++) {
+                    blurred += texture2D(tDiffuse, vUv + vec2(i, j) * texel).rgb * kernel[k++];
+                }
+            }
+
+            float gray = dot(blurred, vec3(0.2989, 0.5870, 0.1140));
+
+            float Gx[9] = float[9](
+                -1.0, 0.0, 1.0,
+                -2.0, 0.0, 2.0,
+                -1.0, 0.0, 1.0
+            );
+            float Gy[9] = float[9](
+                -1.0, -2.0, -1.0,
+                 0.0,  0.0,  0.0,
+                 1.0,  2.0,  1.0
+            );
+
+            float gradientX = 0.0;
+            float gradientY = 0.0;
+            k = 0;
+            for (int i = -1; i <= 1; i++) {
+                for (int j = -1; j <= 1; j++) {
+                    float xsample = texture2D(tDiffuse, vUv + vec2(i, j) * texel).r;
+                    gradientX += xsample * Gx[k];
+                    gradientY += xsample * Gy[k++];
+                }
+            }
+
+            float magnitude = length(vec2(gradientX, gradientY));
+            float direction = atan(gradientY, gradientX);
+
+            float angle = mod(direction + 3.14159265, 3.14159265) / 3.14159265 * 4.0;
+            float neighbor1 = 0.0;
+            float neighbor2 = 0.0;
+
+            if (angle <= 1.0 || angle > 3.0) {
+                neighbor1 = texture2D(tDiffuse, vUv + vec2(texel.x, 0.0)).r;
+                neighbor2 = texture2D(tDiffuse, vUv - vec2(texel.x, 0.0)).r;
+            } else if (angle <= 2.0) {
+                neighbor1 = texture2D(tDiffuse, vUv + vec2(texel.x, -texel.y)).r;
+                neighbor2 = texture2D(tDiffuse, vUv - vec2(texel.x, -texel.y)).r;
+            } else {
+                neighbor1 = texture2D(tDiffuse, vUv + vec2(0.0, texel.y)).r;
+                neighbor2 = texture2D(tDiffuse, vUv - vec2(0.0, texel.y)).r;
+            }
+
+            if (magnitude < neighbor1 || magnitude < neighbor2) {
+                magnitude = 0.0;
+            }
+
+            float edge = 0.0;
+            if (magnitude >= highThreshold) {
+                edge = 1.0;
+            } else if (magnitude >= lowThreshold) {
+                edge = 0.5;
+            }
+
+            if (edge == 0.5) {
+                bool connected = false;
+                for (int i = -1; i <= 1; i++) {
+                    for (int j = -1; j <= 1; j++) {
+                        if (texture2D(tDiffuse, vUv + vec2(i, j) * texel).r >= highThreshold) {
+                            connected = true;
+                        }
+                    }
+                }
+                if (!connected) edge = 0.0;
+            }
+
+            gl_FragColor = vec4(vec3(edge), 1.0);
+        }
+    `
+};
+
 export const thresholdShader = {
     uniforms: {
         tDiffuse: { value: null },

@@ -10,7 +10,7 @@ import { LuminosityShader } from './lib/jsm/shaders/LuminosityShader.js';
 import { ExposureShader } from './lib/jsm/shaders/ExposureShader.js';
 import { BrightnessContrastShader } from './lib/jsm/shaders/BrightnessContrastShader.js';
 
-import { Outline, Inline, BlackAll, sobelShader, thresholdShader } from "./lib/Toon.js";
+import { Outline, Inline, BlackAll, sobelShader, cannyEdgeShader, thresholdShader } from "./lib/Toon.js";
 import { Hub } from "./lib/Hub.js";
 import { Files } from "./lib/Files.js";
 import { Tools } from "./lib/Tools.js";
@@ -68,7 +68,7 @@ export class ThreeCanvas {
 
     createWrappers(canvasNames){
         // Operators "Sobel", "Scharr", "Prewitt"
-        const linesOperators = ["Sobel", "Prewitt", "Scharr"];
+        const linesOperators = ["Sobel", "Prewitt", "Scharr", "Canny"];
         const listLines = $el("select.linesMethod_box",{
             style: {
                 fontSize: "0.5rem",
@@ -80,7 +80,8 @@ export class ThreeCanvas {
                 outline: 0
             },
             onchange: (e)=> {
-                this.sobelPassRadio = e.target.value
+                this.sobelPassSelect = e.target.value
+                this.composer = null
                 this.render()
             },
             title: "Selectd operator for lines"
@@ -150,11 +151,11 @@ export class ThreeCanvas {
                         $el("button.threeCanvasButton.threeCanvasViews3", {
                             textContent: "All Views",
                             onclick: (e) => {
-                                this.VIEWS3 = !this.VIEWS3
+                                this.VIEWS3 = !this.VIEWS3;
       
-                                this.panelWrapper.querySelector(".threeCanvasViews3_camerafix").style.display = this.VIEWS3 ? "block": "none"
+                                this.panelWrapper.querySelector(".threeCanvasViews3_camerafix").style.display = this.VIEWS3 ? "block": "none";
                                 // threeCanvas.fixCamers = threeCanvas.VIEWS3
-                                this.setViews3(this.wrappers)
+                                this.setViews3(this.wrappers);
                             },
                     }),
                     $el("input.threeCanvasViews3_camerafix", {
@@ -166,6 +167,7 @@ export class ThreeCanvas {
                         },
                         onchange: (e)=>{
                             this.fixCamers = !!e.target.checked
+                            this.composer = null
                         },
                     })]),
                 ]
@@ -368,6 +370,12 @@ export class ThreeCanvas {
     }
 
     setViews3(){
+        if( this.VIEWS3 ){
+            this.threeWrapper.classList.add("threeWrapper3Views");
+        } else {
+            this.threeWrapper.classList.remove("threeWrapper3Views");
+        }
+
         this.wrappers.slice(1).map((v)=> Object.assign(v.style, {
             display: this.VIEWS3 ? "block" : "none"
         }))
@@ -610,18 +618,17 @@ export class ThreeCanvas {
         this.render();
     }
 
-    initComposer(renderer){        
+    initComposer(renderer, camera){      
+        const operatorLines = this?.sobelPassSelect ?? 0
         
         // init only one composer
         if(this.composer){
-            // Set changed line type
-            this.effectSobel.uniforms.lineType.value = this?.sobelPassRadio ?? 0
             return;
         } 
 
         const composer = new EffectComposer(renderer);
 
-        const renderPass = new RenderPass(this.scene, this.camera);
+        const renderPass = new RenderPass(this.scene, camera);
         composer.addPass(renderPass);
 
         // color to grayscale conversion
@@ -633,12 +640,23 @@ export class ThreeCanvas {
         effectExposure.uniforms[ 'exposure' ].value = 0.75;
         composer.addPass( effectExposure )
 
-        const effectSobel = new ShaderPass( SobelOperatorShader );
-        effectSobel.uniforms[ 'resolution' ].value.x = this.size.w;
-        effectSobel.uniforms[ 'resolution' ].value.y = this.size.h;
+        if(operatorLines <= 2){
+            const effectSobel = new ShaderPass( SobelOperatorShader );
+            effectSobel.uniforms[ 'resolution' ].value.x = this.size.w;
+            effectSobel.uniforms[ 'resolution' ].value.y = this.size.h;
+            
+            // Set changed line type
+            effectSobel.uniforms.lineType.value = operatorLines 
 
-        this.effectSobel = effectSobel
-        composer.addPass( effectSobel )
+            composer.addPass( effectSobel )
+
+        } else  if(operatorLines == 3){
+        // Canny edge
+            const effectCannyEdge = new ShaderPass( cannyEdgeShader );
+            effectCannyEdge.uniforms.resolution.value.x = this.size.w;
+            effectCannyEdge.uniforms.resolution.value.y = this.size.h;
+            composer.addPass( effectCannyEdge )            
+        }
 
         // this.effectSobel = new ShaderPass(sobelShader);        
         // composer.addPass(this.effectSobel);
@@ -669,7 +687,7 @@ export class ThreeCanvas {
 
                 if(this.useLinesComposer){
                     
-                    this.initComposer(data.renderer)
+                    this.initComposer(data.renderer, camera)
                     return this.composer.render(this.scene)
 
                 }

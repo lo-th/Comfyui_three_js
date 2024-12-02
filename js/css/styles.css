@@ -1,5 +1,11 @@
 .threeWrapper {
-  /* wrapper all canvases */
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 5px;
+}
+
+.threeWrapper3Views{
+  grid-template-columns: 1fr 1fr; 
 }
 
 .threeCanvasPanelWrapper {
@@ -35,7 +41,7 @@
 }
 
 .wrapperThreeViewCanvas {
-  position: absolute;
+  position: relative;  
   margin: 0px;
   padding: 0px;
   display: block;
