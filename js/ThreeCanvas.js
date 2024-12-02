@@ -1,5 +1,6 @@
 import * as THREE from "./lib/three.module.js";
 import { OrbitControls } from "./lib/jsm/controls/OrbitControls.js";
+import { RGBELoader } from './lib/jsm/loaders/RGBELoader.js';
 import { GLTFLoader } from './lib/jsm/loaders/GLTFLoader.js';
 import { DRACOLoader } from './lib/jsm/loaders/DRACOLoader.js';
 import { EffectComposer } from './lib/jsm/postprocessing/EffectComposer.js';
@@ -177,7 +178,7 @@ export class ThreeCanvas {
         return panelWrapper
     }
 
-    init(canvasNames) {
+    init( canvasNames ) {
         // Calculate aspect ratio
         this.aspectRatio = this.size.w / this.size.h;
 
@@ -191,7 +192,7 @@ export class ThreeCanvas {
         renderer1.setClearColor( 0x000000, 1 );
         renderer1.shadowMap.enabled = true;
         renderer1.toneMapping = THREE.ACESFilmicToneMapping;
-        renderer1.toneMappingExposure = 1;
+        renderer1.toneMappingExposure = 0.8;
         //renderer1.outputColorSpace = THREE.SRGBColorSpace;
         // renderer1.domElement.style.cssText = "position:absolute; margin:0; padding:0; border:1px solid black;";
         renderer1.domElement.setAttribute("view", "LEFT")
@@ -308,6 +309,7 @@ export class ThreeCanvas {
         this.scene.add(this.light);
 
         this.initLight();
+        this.initEnvmap();
         this.initLoader();
 
         if(!this.savedData?.currentModel) this.addHeadTest();
@@ -315,6 +317,23 @@ export class ThreeCanvas {
         this.render();
 
         if(this.autoAutoAnim) this.animate();
+    }
+
+    initEnvmap( url = `./assets/clear.hdr` ){
+
+        const envUrl = new URL(url, import.meta.url);
+        const self = this;
+
+        new RGBELoader().load( envUrl, function ( texture ) {
+
+            texture.mapping = THREE.EquirectangularReflectionMapping;
+
+            //scene.background = texture;
+            self.scene.environment = texture;
+            //self.scene.environmentIntensity = 0.8
+        });
+
+
     }
 
     initLight(){
@@ -326,7 +345,7 @@ export class ThreeCanvas {
         //this.sunHelper = new THREE.CameraHelper( this.sun.shadow.camera )
         //this.light.add( this.sunHelper );
 
-        this.light.add( new THREE.AmbientLight( 0xffffFF, 0.2) );
+        //this.light.add( new THREE.AmbientLight( 0xffffFF, 0.2) );
 
     }
 
@@ -528,7 +547,7 @@ export class ThreeCanvas {
         let lightpos = center.clone().add( new THREE.Vector3(-radius*0.3,radius*2, radius) )
 
         let pos = center.clone().add( new THREE.Vector3(0,0,radius*2) )
-        let near = radius*0.5;
+        let near = radius*0.1;
         let far = radius * 4;
 
         this.scene.add(model);
