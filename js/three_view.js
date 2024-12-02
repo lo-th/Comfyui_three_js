@@ -41,73 +41,12 @@ async function widgetThreeJS(node, nodeData, inputData, app, params = {}) {
     threeCanvas.setApi(api);
     threeCanvas.init(canvasNames);
 
-    // Add panel widget
-    const panelWrapper = $el("div.threeCanvasPanelWrapper", {}, [
-        $el(
-            "div.threeCanvasPanel",
-            [
-                $el("button.threeCanvasButton.threeCanvasAdd", {
-                    textContent: "Load",
-                    onclick: (e) => {
-                        threeCanvas.load()
-                        widget?.callback()
-                    },
-                }),
-                $el("button.threeCanvasButton.threeCanvasDel", {
-                    textContent: "X",
-                    onclick: (e) => threeCanvas.clear(true),
-                }),
-                $el("button.threeCanvasButton.threeCanvasSize", {
-                    textContent: "Canvas size",
-                    onclick: (e) => {
-                        try {
-                            let w = +prompt("Widht:", threeCanvas.size.w);
-                            let h = +prompt("Height:", threeCanvas.size.h);
-
-                            // Simple check...
-                            if (!w || w <= 0) w = threeCanvas.size.w;
-                            if (!h || h <= 0) h = threeCanvas.size.h;
-
-                            if (w) threeCanvas.setCanvasSize(w, h);
-                            widget?.callback();
-                            app.graph.setDirtyCanvas(true, false);
-                        } catch (error) {
-                            console.log(error);
-                        }
-
-                        // add validate check size
-                    },
-                }),
-                $el("div.threeCanvasViews3Box", {
-            },[
-                    $el("button.threeCanvasButton.threeCanvasViews3", {
-                        textContent: "All Views",
-                        onclick: (e) => {
-                            threeCanvas.VIEWS3 = !threeCanvas.VIEWS3
-                            panelWidget.element.querySelector(".threeCanvasViews3_camerafix").style.display = threeCanvas.VIEWS3 ? "block": "none"
-                            // threeCanvas.fixCamers = threeCanvas.VIEWS3
-                            threeCanvas.setViews3(threeCanvas.wrappers)
-                        },
-                }),
-                $el("input.threeCanvasViews3_camerafix", {
-                    type: "checkbox",
-                    title: "Fix all camers",
-                    checked: threeCanvas.fixCamers,
-                    style: {
-                        display: "none",
-                    },
-                    onchange: (e)=>{
-                        threeCanvas.fixCamers = !!e.target.checked
-                    },
-                })]),
-            ]
-        ),
-    ]);
+    
 
     const panelWidget = node.addDOMWidget(
         nodeData.name,
         "threeCanvasPanel",
-        panelWrapper,
+        threeCanvas.panelWrapper,
         {
             getValue() {
                 return "panelWidgetValue";
@@ -121,8 +60,7 @@ async function widgetThreeJS(node, nodeData, inputData, app, params = {}) {
 
 
     // Add widget threeCanvas
-    const threeWrapper = $el("div.threeWrapper", {}, threeCanvas.wrappers);
-    widget = node.addDOMWidget("threeCanvas", "custom_widget", threeWrapper, {
+    widget = node.addDOMWidget("threeCanvas", "custom_widget", threeCanvas.threeWrapper, {
         getValue() {
             return threeCanvas.getSavedOptions();
         },
@@ -136,7 +74,7 @@ async function widgetThreeJS(node, nodeData, inputData, app, params = {}) {
         const w = !threeCanvas.VIEWS3 ? widgetWidth - 25: (widgetWidth - 25)/2;
         const aspect_ratio = threeCanvas.size.h / threeCanvas.size.w;
 
-        Object.assign(threeCanvas.getWrapper().style, {
+        Object.assign(threeCanvas.threeWrapper.style, {
             width: w + "px",
             height: w * aspect_ratio + "px",
         });
@@ -151,7 +89,7 @@ async function widgetThreeJS(node, nodeData, inputData, app, params = {}) {
             Object.assign(threeCanvas.getWrapper(2).style, {
                 width: w + "px",
                 height: w * aspect_ratio + "px",
-                top: parseFloat(threeCanvas.getWrapper().style.height) + 10 + "px"
+                top: parseFloat(threeCanvas.getWrapper(1).style.height) + 10 + "px"
 
             });
 
@@ -159,7 +97,7 @@ async function widgetThreeJS(node, nodeData, inputData, app, params = {}) {
                 width: w + "px",
                 height: w * aspect_ratio + "px",
                 left: w + 10 + "px",
-                top: parseFloat(threeCanvas.getWrapper().style.height) + 10 + "px"
+                top: parseFloat(threeCanvas.getWrapper(1).style.height) + 10 + "px"
 
             });            
         }
@@ -171,11 +109,9 @@ async function widgetThreeJS(node, nodeData, inputData, app, params = {}) {
     };
 
     widget.threeCanvas = threeCanvas;
-    widget.threeWrapper = threeWrapper;
+    widget.threeWrapper = threeCanvas.threeWrapper;
 
-    widget.callback = () => {
-        threeWrapper.value = JSON.stringify(threeCanvas.getSavedOptions());
-    };
+    widget.callback = () => {};
 
     // Note: If the node is collapsed, the draw method does not work and the canvas will not update.
     // const animator = () => {

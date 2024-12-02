@@ -10,15 +10,18 @@
 		<title>THREE DIRECT</title>
 		<meta name="description" content="test three view"/>
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-		<link rel="stylesheet" type="text/css" href="../../../../user.css" />
-		<link rel="stylesheet" type="text/css" href="../../../../materialdesignicons.min.css" />
-		<script type="module" crossorigin src="../../../../assets/index-B6dYHNhg.js"></script>
 		<link rel="stylesheet" crossorigin href="../../../../extensions/Comfyui_three_js/css/styles.css">
 		<style>
-			.threeWrapper {
-				position: relative;
-				top: 30px;
-			}
+		.threeWrapper {
+			display: grid;
+			margin-top: 50px;
+			grid-template-columns: 1fr 1fr;
+			width: 1000px;
+			padding: 20px;
+		}
+		.wrapperThreeViewCanvas {
+    		position: relative;
+		}
 		</style>		
 		
 	</head>
@@ -27,35 +30,16 @@
 		<script type="module">
 		    import { ThreeCanvas } from '../../../../extensions/Comfyui_three_js/ThreeCanvas.js'
 			const canvasNames = [
-				{name:"image", color: "black"},
+				{name:"image", color: "silver"},
 				{name:"lines", color: "red"},
 				{name:"depth", color: "yellow"},
 				{name:"normal", color: "#8080ff"}
 			];  
 
-			// Clear other
-			Array.from(document.querySelectorAll("[class*=comfy]")).map((el)=>el.remove())
-
 		    const threeCanvas = new ThreeCanvas(null, null, {views3: true});
 		    threeCanvas.init(canvasNames);
 
-			const mainWrapper = document.createElement("div")
-			mainWrapper.className = "threeWrapper"
-
-		    threeCanvas.wrappers[0].style.left = 0 + 'px';
-		    threeCanvas.wrappers[1].style.left = threeCanvas.size.w + 'px';
-
-		    threeCanvas.wrappers[2].style.left = 0 + 'px';
-		    threeCanvas.wrappers[2].style.top = threeCanvas.size.h + 'px';
-
-			threeCanvas.wrappers[3].style.left = threeCanvas.size.w + 'px';
-		    threeCanvas.wrappers[3].style.top = threeCanvas.size.h + 'px';
-
-			threeCanvas.wrappers.map((w)=>{
-				mainWrapper.appendChild(w)
-			})
-
-		    document.body.appendChild(mainWrapper);
+		    document.body.append(threeCanvas.panelWrapper, threeCanvas.threeWrapper);
 		</script>
 	</body>
 </html>

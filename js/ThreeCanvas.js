@@ -15,7 +15,7 @@ import { Hub } from "./lib/Hub.js";
 import { Files } from "./lib/Files.js";
 import { Tools } from "./lib/Tools.js";
 
-import { $el } from "../../scripts/ui.js";
+import { $el } from "./lib/utils.js";
 
 // Class ThreeCanvas
 export class ThreeCanvas {
@@ -97,7 +97,7 @@ export class ThreeCanvas {
         const wrapperCanvas = canvasNames.map((data, idx)=> {
 
             const wrapper = $el(`div.wrapperThreeViewCanvas.threeview_wrapper_${data.name}`, {
-                style: { borderColor: data.color },
+                style: { borderColor: data.color, },
             });
 
             if(idx === 1) wrapper.append(listLines)
@@ -107,6 +107,72 @@ export class ThreeCanvas {
         })
         
         return wrapperCanvas
+    }
+
+    createPanel(){
+        // Add panel widget
+        const panelWrapper = $el("div.threeCanvasPanelWrapper", {}, [
+            $el(
+                "div.threeCanvasPanel",
+                [
+                    $el("button.threeCanvasButton.threeCanvasAdd", {
+                        textContent: "Load",
+                        onclick: (e) => {
+                            this.load()
+                        },
+                    }),
+                    $el("button.threeCanvasButton.threeCanvasDel", {
+                        textContent: "X",
+                        onclick: (e) => this.clear(true),
+                    }),
+                    $el("button.threeCanvasButton.threeCanvasSize", {
+                        textContent: "Canvas size",
+                        onclick: (e) => {
+                            try {
+                                let w = +prompt("Widht:", this.size.w);
+                                let h = +prompt("Height:", this.size.h);
+
+                                // Simple check...
+                                if (!w || w <= 0) w = this.size.w;
+                                if (!h || h <= 0) h = this.size.h;
+
+                                if (w) this.setCanvasSize(w, h);
+            
+                            } catch (error) {
+                                console.log(error);
+                            }
+
+                            // add validate check size
+                        },
+                    }),
+                    $el("div.threeCanvasViews3Box", {
+                },[
+                        $el("button.threeCanvasButton.threeCanvasViews3", {
+                            textContent: "All Views",
+                            onclick: (e) => {
+                                this.VIEWS3 = !this.VIEWS3
+      
+                                this.panelWrapper.querySelector(".threeCanvasViews3_camerafix").style.display = this.VIEWS3 ? "block": "none"
+                                // threeCanvas.fixCamers = threeCanvas.VIEWS3
+                                this.setViews3(this.wrappers)
+                            },
+                    }),
+                    $el("input.threeCanvasViews3_camerafix", {
+                        type: "checkbox",
+                        title: "Fix all camers",
+                        checked: this.fixCamers,
+                        style: {
+                            display: "none",
+                        },
+                        onchange: (e)=>{
+                            this.fixCamers = !!e.target.checked
+                        },
+                    })]),
+                ]
+            ),
+        ]);     
+        
+        return panelWrapper
     }
 
     init(canvasNames) {
@@ -193,6 +259,10 @@ export class ThreeCanvas {
 
         // Create wrappers for canvases
         this.wrappers = this.createWrappers(canvasNames)
+        this.threeWrapper = $el("div.threeWrapper", {}, this.wrappers)
+
+        // Create panel
+        this.panelWrapper = this.createPanel()
 
         // Views3
         this.setViews3()
@@ -532,8 +602,6 @@ export class ThreeCanvas {
         this.needResize = false;
 
 
-        // this.node.title = `${this.node.type} [${this.size.w}x${this.size.h}]`;
-
     }
 
     animate() {
@@ -631,7 +699,7 @@ export class ThreeCanvas {
             }
         })
 
-        this.node.title = `${this.node.type} [${this.size.w}x${this.size.h}]`;
+        if(this?.node) this.node.title = `${this.node.type} [${this.size.w}x${this.size.h}]`;
         this.render();
         this.node?.onResize();
 
