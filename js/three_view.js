@@ -71,37 +71,13 @@ async function widgetThreeJS(node, nodeData, inputData, app, params = {}) {
         origDraw?.apply(this, arguments);
 
         const [ctx, nodeThree, widgetWidth, posY] = arguments;
-        const w = !threeCanvas.VIEWS3 ? widgetWidth - 25: (widgetWidth - 25)/2;
+        const w =  widgetWidth - 25;
         const aspect_ratio = threeCanvas.size.h / threeCanvas.size.w;
 
         Object.assign(threeCanvas.threeWrapper.style, {
             width: w + "px",
             height: w * aspect_ratio + "px",
         });
-
-        if( threeCanvas.VIEWS3 ){
-            Object.assign(threeCanvas.getWrapper(1).style, {
-                width: w + "px",
-                height: w * aspect_ratio + "px",
-                left: w + 10 + "px"
-            });
-
-            Object.assign(threeCanvas.getWrapper(2).style, {
-                width: w + "px",
-                height: w * aspect_ratio + "px",
-                top: parseFloat(threeCanvas.getWrapper(1).style.height) + 10 + "px"
-
-            });
-
-            Object.assign(threeCanvas.getWrapper(3).style, {
-                width: w + "px",
-                height: w * aspect_ratio + "px",
-                left: w + 10 + "px",
-                top: parseFloat(threeCanvas.getWrapper(1).style.height) + 10 + "px"
-
-            });            
-        }
-
 
         // Update renderer
         // threeCanvas.update(node.size[0]);
