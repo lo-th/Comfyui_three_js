@@ -295,12 +295,14 @@ export class ThreeCanvas {
             document.body.addEventListener( 'drop', this.drop.bind(this), false );
         }
 
-        // hub for all setting
-        this.hub = new Hub();
+        
 
         this.camera = camera1;
         this.controls = controls;
         this.scene = scene;
+
+        // hub for all setting
+        this.hub = new Hub( this.controls );
 
         this.helper = new THREE.Group()
         this.scene.add(this.helper);
@@ -521,7 +523,10 @@ export class ThreeCanvas {
 
         // Apply automorph to model //! 
         // Convention model name is ModelNale__M__TypeOfMorph
-        Tools.autoMorph( model );
+        const haveMorph = Tools.autoMorph( model );
+
+        // get skinning 
+        const haveSkinning = Tools.autoSkinning( model );
 
         // active shadow 
         Tools.autoShadow( model );

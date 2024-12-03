@@ -32,6 +32,25 @@ export const Tools = {
 
     },
 
+    // SKINNING
+
+    autoSkinning( model ){
+
+    	let haveSkinning = false;
+
+    	model.traverse( ( child ) => {
+            if ( child.isMesh ){
+            	if(child.skeleton) haveSkinning = true;
+            }
+        })
+
+        return haveSkinning;
+
+    },
+
+
+    // MORPH
+
     setMorph:( obj, name, value )=>{
         if(!obj.morphTargetInfluences) return
 		if(obj.morphTargetDictionary[name] === undefined ) return
@@ -40,6 +59,7 @@ export const Tools = {
 
 	autoMorph: ( model, normal = true, relative = false ) => {
 
+		let haveMorph = false;
 		const meshs = Tools.getMesh( model );
 
     	let morph = {};
@@ -111,6 +131,7 @@ export const Tools = {
                     target.morphTargetInfluences.push(0)
                     target.morphTargetDictionary[ tName ] = id;
                     target.userData.morph.push(tName);
+                    haveMorph = true;
                     
 
 				} else {
@@ -132,6 +153,8 @@ export const Tools = {
 			//if( m.material ) m.material.dispose()
 			
 		}
+
+		return haveMorph;
 
 	},
 

@@ -2,7 +2,7 @@
 [project]
 name = "comfyui_three_js"
 description = "Use power of three.js in 3d view on comfyui."
-version = "0.2.3"
+version = "0.2.4"
 license = { file = "LICENSE" }
 dependencies  = []
 
@@ -12,4 +12,4 @@ Repository = "https://github.com/lo-th/Comfyui_three_js"
 [tool.comfy]
 PublisherId = "lth"
 DisplayName = "Comfyui_three_js"
-Icon = ""
+Icon = "logo.png"
