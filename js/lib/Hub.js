@@ -4,7 +4,9 @@ let unselectable = '-o-user-select:none; -ms-user-select:none; -khtml-user-selec
 
 export class Hub {
 
-    constructor() {
+    constructor( root ) {
+
+        this.root = root;
 
         const content = document.createElement( 'div' );
         content.style.cssText = unselectable + 'position:absolute; top:0; left:0; width:100%; height:100%;';// font-family: Mulish,sans-serif;z-index: 100000;pointer-events:auto; cursor: pointer;
@@ -16,7 +18,11 @@ export class Hub {
 
     clear(){
         var div = this.content;
-        while( div.firstChild ){ div.removeChild(div.firstChild) }
+        //while( div.firstChild ){ div.removeChild(div.firstChild) }
+
+        if(this.gui){
+            if(this.morph) this.morph.destroy()
+        }
     }
 
     add( dom ){
@@ -31,19 +37,35 @@ export class Hub {
 
     init(){
 
-        return
+        this.iner = document.createElement( 'div' );
+        this.iner.style.cssText = unselectable + 'position:absolute; top:0; left:0; pointer-events:auto; height:auto; display: flex;';
+        this.content.appendChild( this.iner );
 
+        let gui = new GUI( { container:this.iner, width:160, title: 'Option' } );
+        this.gui = gui;
 
-        const iner = document.createElement( 'div' );
-        iner.style.cssText = unselectable + 'position:absolute; top:0; left:0; pointer-events:auto;';
-        this.content.appendChild( iner );
+    }
 
-        let gui = new GUI( { container:iner, width:160, title: 'Option' } )
-        gui.add( { test: 0.5 }, 'test', 0, 1 )
-        gui.add( { value: 0.5 }, 'value', 0, 1 )
-        gui.add( { here: 0.5 }, 'here', 0, 1 )
+    addMorph( model ){
 
-        console.log(gui)
+        const folder = this.gui.addFolder( 'Morph' );
+
+        for(const name in model){
+
+            let m = model[name]
+
+            if(!m.userData.morph) continue;
+
+            for(let t in m.userData.morph){
+                folder.add( m.userData.morph, t, 0, 1 ).onChange( v => { m.morphTargetInfluences[ m.morphTargetDictionary[t] ] = v; this.root.render() }  )
+            }
+
+        }
+
+        this.morph = folder
+
+        
+
     }
 
 }

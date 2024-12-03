@@ -302,7 +302,7 @@ export class ThreeCanvas {
         this.scene = scene;
 
         // hub for all setting
-        this.hub = new Hub( this.controls );
+        this.hub = new Hub( this );
 
         this.helper = new THREE.Group()
         this.scene.add(this.helper);
@@ -417,6 +417,7 @@ export class ThreeCanvas {
     clear(b){
 
         Tools.reset();
+        if(this.hub) this.hub.clear();
 
         if( this.model ) this.scene.remove(this.model);
         this.helper.children = [];
@@ -546,7 +547,10 @@ export class ThreeCanvas {
         const center = box.getCenter(new THREE.Vector3());
 
         // test morph
-        //console.log( Tools.MorphModel )
+        console.log( Tools.MorphModel )
+
+        if(haveMorph) this.hub.addMorph( Tools.MorphModel );
+
         //Tools.setMorph(Tools.MorphModel.face,'Smile_Open', 1)
 
         let lightpos = center.clone().add( new THREE.Vector3(-radius*0.3,radius*2, radius) )

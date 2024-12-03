@@ -92,7 +92,7 @@ export const Tools = {
 
 			if( target ){
 
-				if(!target.userData.morph) target.userData.morph = []
+				if(!target.userData.morph) target.userData.morph = {}
 
 				g = target.geometry;
 				gm = morph[name];
@@ -130,7 +130,7 @@ export const Tools = {
 
                     target.morphTargetInfluences.push(0)
                     target.morphTargetDictionary[ tName ] = id;
-                    target.userData.morph.push(tName);
+                    target.userData.morph[tName] = 0;
                     haveMorph = true;
                     
 
