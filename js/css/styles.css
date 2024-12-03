@@ -48,3 +48,25 @@
   border-style: solid;
   border-width: 1px;
 }
+
+.lil-gui { 
+  --padding: 2px;
+  --spacing: 2px;
+  --widget-height: 11px;
+  --font-size: 11px;
+  --input-font-size: 10px;
+  --widget-border-radius: 0px;
+  --slider-input-min-width: 30px;
+  --color-input-min-width: 30px;
+  --width:160px;
+  --name-width:30%;
+  --background-color: none;
+  --title-background-color:none;
+  --text-color: #ebebeb;
+  --title-text-color: #ebebeb;
+  --widget-color: rgba(20,20,10,0.5);
+  --hover-color: rgba(30,30,50,0.8);;
+  --focus-color: #595959;
+  --number-color: #2cc9ff;
+  --string-color: #a2db3c;
+}
