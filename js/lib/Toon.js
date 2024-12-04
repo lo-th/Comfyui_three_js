@@ -1,5 +1,38 @@
 import * as THREE from "./three.module.js"
 
+
+export const Depth = new THREE.ShaderMaterial({
+    uniforms: {
+        u_abcd: { value: new THREE.Vector4(0, -1, 0, 10)  },
+        u_unitLength: { value: 5.0  }
+    },
+    vertexShader:/* glsl */ `
+        varying vec4 v_worldPosition;    
+        
+        void main()
+        {
+            v_worldPosition = modelMatrix * vec4( position, 1.0 );      
+            vec4 mvPosition = viewMatrix * v_worldPosition;
+            gl_Position = projectionMatrix * mvPosition;
+        }
+    `,
+    fragmentShader:/* glsl */ `
+        uniform vec4 u_abcd;
+        uniform float u_unitLength;
+        
+        varying vec4 v_worldPosition;   
+        
+        void main( void ) 
+        {        
+            float depth = dot(u_abcd.xyz, v_worldPosition.xyz) + u_abcd.w;
+            vec3 color = vec3(depth / u_unitLength);
+            gl_FragColor = vec4( color, 1.0 );
+        }
+    `,
+    
+});
+
+
 export const Outline = new THREE.ShaderMaterial({
     uniforms: {
         color: { value: new THREE.Color(0xffFFFF) },

@@ -11,7 +11,7 @@ import { LuminosityShader } from './lib/jsm/shaders/LuminosityShader.js';
 import { ExposureShader } from './lib/jsm/shaders/ExposureShader.js';
 import { BrightnessContrastShader } from './lib/jsm/shaders/BrightnessContrastShader.js';
 
-import { Outline, Inline, BlackAll, sobelShader, cannyEdgeShader, thresholdShader } from "./lib/Toon.js";
+import { Depth, Outline, Inline, BlackAll, sobelShader, cannyEdgeShader, thresholdShader } from "./lib/Toon.js";
 import { Hub } from "./lib/Hub.js";
 import { Files } from "./lib/Files.js";
 import { Tools } from "./lib/Tools.js";
@@ -247,8 +247,13 @@ export class ThreeCanvas {
         camera3.position.set(0, 0, 5); // front
         camera3.lookAt(0, 0, 0);
 
+
+        
+
         const depthMaterial = new THREE.MeshDepthMaterial()
-        depthMaterial.displacementScale = 10
+
+        
+        //depthMaterial.displacementScale = 10
         const normalMaterial = new THREE.MeshNormalMaterial()
 
 
@@ -543,11 +548,12 @@ export class ThreeCanvas {
         b0.geometry.computeBoundingSphere()
         b0.geometry.computeBoundingBox()
         const box = b0.geometry.boundingBox;
+        const sizer = box.getSize(new THREE.Vector3()).length()
         const radius = b0.geometry.boundingSphere.radius;
         const center = box.getCenter(new THREE.Vector3());
 
         // test morph
-        //console.log( Tools.MorphModel )
+        //console.log( radius, sizer )
 
         if(haveMorph) this.hub.addMorph( Tools.MorphModel );
 
@@ -556,8 +562,11 @@ export class ThreeCanvas {
         let lightpos = center.clone().add( new THREE.Vector3(-radius*0.3,radius*2, radius) )
 
         let pos = center.clone().add( new THREE.Vector3(0,0,radius*2) )
-        let near = radius*0.1;
-        let far = radius * 4;
+        //let near = radius/4;
+        //let far = radius*4;
+
+        let near = sizer*0.1;
+        let far = sizer*2;
 
         this.scene.add(model);
         this.model = model;
@@ -704,7 +713,9 @@ export class ThreeCanvas {
         if(!this.hub.ready) this.hub.add(this.getDom(0))
         
         this.tools.forEach((data)=>{
-            const camera = this.VIEWS3 && !this.fixCamers ? data.camera : this.camera
+            let camera = this.VIEWS3 && !this.fixCamers ? data.camera : this.camera
+
+
 
             this.scene.overrideMaterial = !data.material ? null: data.material;
 
