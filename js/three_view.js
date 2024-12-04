@@ -1,8 +1,6 @@
 import { app } from "../../scripts/app.js";
 import { api } from "../../scripts/api.js";
 import { addStylesheet } from "../../scripts/utils.js";
-//import * as THREE from "./lib/three.module.js";
-//import { OrbitControls } from "./lib/OrbitControls.js";
 import { $el } from "../../scripts/ui.js";
 
 import { ThreeCanvas } from "./ThreeCanvas.js";

@@ -9,7 +9,7 @@ export class Hub {
         this.root = root;
 
         const content = document.createElement( 'div' );
-        content.style.cssText = unselectable + 'position:absolute; top:0; left:0; width:100%; height:100%;';// font-family: Mulish,sans-serif;z-index: 100000;pointer-events:auto; cursor: pointer;
+        content.style.cssText = unselectable + 'position:absolute; top:0; left:0; width:100%; height:100%;';
        
         this.content = content;
         this.ready = false;
@@ -38,10 +38,10 @@ export class Hub {
     init(){
 
         this.iner = document.createElement( 'div' );
-        this.iner.style.cssText = unselectable + 'position:absolute; top:0; left:0; pointer-events:auto; height:auto; display: flex;';
+        this.iner.style.cssText = unselectable + 'position:absolute; top:0; left:0; pointer-events:auto; width:auto; display:flex; max-height: 100%;';//background:rgba(50,0,0,0.5); 
         this.content.appendChild( this.iner );
 
-        let gui = new GUI( { container:this.iner, width:160, title: 'Option' } );
+        let gui = new GUI( { container:this.iner, width:150, title: 'Option', injectStyles:true, touchStyles: false } );
         this.gui = gui;
 
     }

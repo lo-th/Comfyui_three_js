@@ -547,7 +547,7 @@ export class ThreeCanvas {
         const center = box.getCenter(new THREE.Vector3());
 
         // test morph
-        console.log( Tools.MorphModel )
+        //console.log( Tools.MorphModel )
 
         if(haveMorph) this.hub.addMorph( Tools.MorphModel );
 
