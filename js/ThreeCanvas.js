@@ -552,7 +552,6 @@ export class ThreeCanvas {
         const radius = b0.geometry.boundingSphere.radius;
         const center = box.getCenter(new THREE.Vector3());
 
-        // test morph
         //console.log( radius, sizer )
 
         if(haveMorph) this.hub.addMorph( Tools.MorphModel );
