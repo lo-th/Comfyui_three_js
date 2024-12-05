@@ -1,0 +1,54 @@
+{
+    "default": [
+        {
+            "name": "column.glb",
+            "size": 35128,
+            "path": "./assets/column.glb"
+        },
+        {
+            "name": "dog.glb",
+            "size": 37312,
+            "path": "./assets/dog.glb"
+        },
+        {
+            "name": "eva00.glb",
+            "size": 450112,
+            "path": "./assets/eva00.glb"
+        },
+        {
+            "name": "eva01.glb",
+            "size": 446184,
+            "path": "./assets/eva01.glb"
+        },
+        {
+            "name": "eva02.glb",
+            "size": 450816,
+            "path": "./assets/eva02.glb"
+        },
+        {
+            "name": "head.glb",
+            "size": 2346688,
+            "path": "./assets/head.glb"
+        },
+        {
+            "name": "head2.glb",
+            "size": 125672,
+            "path": "./assets/head2.glb"
+        },
+        {
+            "name": "lee.glb",
+            "size": 107424,
+            "path": "./assets/lee.glb"
+        },
+        {
+            "name": "man.glb",
+            "size": 462112,
+            "path": "./assets/man.glb"
+        },
+        {
+            "name": "woman.glb",
+            "size": 465272,
+            "path": "./assets/woman.glb"
+        }
+    ]
+}

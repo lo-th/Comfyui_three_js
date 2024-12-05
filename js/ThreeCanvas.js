@@ -127,6 +127,19 @@ export class ThreeCanvas {
                         textContent: "X",
                         onclick: (e) => this.clear(true),
                     }),
+                    $el("select.threeCanvasListModels", {
+                        onchange: (e) => {
+                            // console.log(e.target.value)
+                            this.loaderGltf.load(e.target.value, ( glb ) => {
+                                this.addModel( glb );                                                           
+                            }, 
+                            ( data ) => {/* console.log( `Loaded data: ${data.loaded}/${data.total}` */},
+                            ( err ) => {
+                                console.log( err );
+                                this.addHeadTest();
+                            })
+                        },
+                    }),
                     $el("button.threeCanvasButton.threeCanvasSize", {
                         textContent: "Canvas size",
                         onclick: (e) => {
@@ -173,7 +186,32 @@ export class ThreeCanvas {
                     })]),
                 ]
             ),
-        ]);     
+        ]);
+
+        const addOptionsEl = (result) => {
+            const models_options = []
+            models_options.push($el("option", {textContent: "Select model", disabled: true, selected: true}))  
+            for(let type in result.models){ 
+                models_options.push($el("option", {textContent: `[${type[0].toUpperCase()+type.slice(1)}]`, disabled: true}))                       
+                models_options.push(...result.models[type].map((m)=> $el("option", {value: m.path.indexOf("/view") === -1 ? new URL(m.path, import.meta.url).href: m.path, textContent: m.name})))
+            }
+            panelWrapper.querySelector(".threeCanvasListModels").append(...models_options)           
+        }
+        
+        // Get models
+        fetch("/lth/models").then((resp)=> resp?.json()).then((result)=>{
+            if(result?.models){
+                addOptionsEl(result)
+            }
+        }).catch((err)=>{
+            console.log(err)
+            fetch("./models_default.json").then((resp)=>resp.json()).then((result)=>{
+                console.log("!!!",result )
+                if(result){
+                    addOptionsEl({models: result})
+                }
+            })
+        });
         
         return panelWrapper
     }

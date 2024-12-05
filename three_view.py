@@ -12,6 +12,7 @@ from server import PromptServer
 import time
 from aiohttp import web
 import folder_paths
+import json
 
 
 # Message Handling
@@ -42,14 +43,94 @@ import folder_paths
 DEBUG = True
 THREEVIEW_DICT = {}  # ThreeView dict instances
 
+# Directory threejs
+extension_threejs = os.path.dirname(os.path.realpath(__file__))
+
+# Support extension models
+support_ext = ("glb",)
+def getModelsInDir(folder, path):
+    list_models = []
+    for model in os.scandir(folder):
+        if not model.is_file():
+            continue
+
+        model_file_size = model.stat().st_size
+        if model_file_size == 0:
+            continue
+
+        model_file = model.name.split(".")
+        ext = model_file[-1]
+
+        if ext not in support_ext:
+            continue
+
+        pathFile = os.path.join(path, model.name)
+
+        # model_file_name = ".".join(model_file[:-1])
+        list_models.append({"name": model.name, "size": model_file_size, "path": pathFile})
+
+    return list_models
+
+
+def createJsonFileStartup():
+    models_js_dir = os.path.join(extension_threejs, "js")
+    models_assets_dir = os.path.join(models_js_dir, "assets")
+
+    # Assets directory
+    if not os.path.exists(models_assets_dir):
+        return
+
+    models = {
+        "default": getModelsInDir(models_assets_dir, "./assets/"),
+    } 
+
+    saveFilePath = os.path.join(models_js_dir, "models_default.json")
+    with open(saveFilePath, "w+", encoding="utf-8") as file:
+        file.write(json.dumps(models, indent=4))
+        
+
+# Create on startup default models json file in assets directory 
+createJsonFileStartup()
+
+
+@PromptServer.instance.routes.get("/lth/models")
+async def getModels(request):
+    try:
+        models_assets_dir = os.path.join(extension_threejs, "js", "assets")
+        models_input_dir = os.path.join(folder_paths.get_input_directory(), "ThreeViewModels")
+
+        models = {
+            "default": [],
+           "loaded": []
+        } 
+
+        # Assets directory
+        if os.path.exists(models_assets_dir):
+            models["default"] = getModelsInDir(models_assets_dir, "./assets/")
+        else:
+            print(f"ThreeView: Path {models_assets_dir} not exists!")
+
+        # Input > ThreeViewModels directory
+        if os.path.exists(models_input_dir):
+            models["loaded"] = list(map(lambda x: {**x, "path": f"/view?filename={x['name']}&type=input&subfolder=ThreeViewModels"}, getModelsInDir(models_input_dir, "")))
+        else:
+            print(f"ThreeView: Path {models_input_dir} not exists!")
+
+        return web.json_response({"status":"ok", "models": models}, status=200)
+    
+    except Exception as err:
+        print("ThreeView: Get models error", err)
+        return web.json_response({"status":"error"}, status=500)
+
 @PromptServer.instance.routes.get("/api/lth/")
 async def indexPage(request):
-    pathIndex = os.path.join(os.path.dirname(os.path.realpath(__file__)), "js", "index.html")
+    pathIndex = os.path.join(extension_threejs, "js", "index.html")
     response = web.FileResponse(pathIndex)
     response.headers['Cache-Control'] = 'no-cache'
     response.headers["Pragma"] = "no-cache"
     response.headers["Expires"] = "0"
-    return response    
+    return response
+
 
 @PromptServer.instance.routes.post("/lth/save_complete")
 async def checkSaveImage(request):
@@ -61,7 +142,7 @@ async def checkSaveImage(request):
         return web.json_response({"status": "Complete"}, status=200)
 
     return web.json_response({"status": "Error invalid unique_id"}, status=400)
-
+    
 
 def waitSaveImage(unique_id, time_out=100):
     for _ in range(time_out):
