@@ -81,7 +81,9 @@ def createJsonFileStartup():
         return
 
     models = {
-        "default": getModelsInDir(models_assets_dir, "./assets/"),
+        "models": {
+            "default": getModelsInDir(models_assets_dir, "./assets/"),
+        }
     } 
 
     saveFilePath = os.path.join(models_js_dir, "models_default.json")
@@ -101,18 +103,18 @@ async def getModels(request):
 
         models = {
             "default": [],
-           "loaded": []
+            "loaded": []
         } 
 
         # Assets directory
         if os.path.exists(models_assets_dir):
-            models["default"] = getModelsInDir(models_assets_dir, "./assets/")
+            models["default"] = getModelsInDir(models_assets_dir, "assets/")
         else:
             print(f"ThreeView: Path {models_assets_dir} not exists!")
 
         # Input > ThreeViewModels directory
         if os.path.exists(models_input_dir):
-            models["loaded"] = list(map(lambda x: {**x, "path": f"/view?filename={x['name']}&type=input&subfolder=ThreeViewModels"}, getModelsInDir(models_input_dir, "")))
+            models["loaded"] =  getModelsInDir(models_input_dir, "ThreeViewModels/")
         else:
             print(f"ThreeView: Path {models_input_dir} not exists!")
 

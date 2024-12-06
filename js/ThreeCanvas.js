@@ -56,7 +56,10 @@ export class ThreeCanvas {
         this.VIEWS3 = views3
 
         // Fix camers
-        this.fixCamers = fixCamers;        
+        this.fixCamers = fixCamers;   
+        
+        // List models
+        this.listModels = []
     }
 
     getDom(idx=0) {
@@ -111,7 +114,54 @@ export class ThreeCanvas {
         return wrapperCanvas
     }
 
-    createPanel(){
+    // get models function
+    async getModelRequest (pWrapper) {
+        // Create options elements
+        const addOptionsEl = (result) => {
+            const threeCanvasList = pWrapper.querySelector(".threeCanvasListModels")
+            const models_options = []
+
+            models_options.push($el("option", {textContent: "Select model", disabled: true, selected: true})) 
+            threeCanvasList.innerHTML = ""
+
+            for(let type in result.models){ 
+                models_options.push($el("option", {textContent: `[${type[0].toUpperCase()+type.slice(1)}]`, disabled: true})) 
+
+                
+                models_options.push(...result.models[type].map((m)=> {
+                    let path = m.path
+                    const [subfolder, name] = path.split("/") 
+
+                    if(path.indexOf("ThreeViewModels/") === -1){
+                        path = new URL(path, import.meta.url).href
+                    } else {
+                        path = `/view?filename=${name}&type=input&subfolder=${subfolder}`
+                    }
+
+                    this.listModels.push(name)
+                    return $el("option", {value: path, textContent: m.name, dataset: {path: m.path}})
+                }))
+            }
+            threeCanvasList.append(...models_options)           
+        }
+        
+        // Get models
+        return fetch("/lth/models", { cache: "no-store" }).then((resp)=> resp?.json()).then((result)=>{
+            if(result?.models){
+                addOptionsEl(result)
+            }
+        }).catch((err)=>{
+            console.log("Error loading list, loading default list!")
+            fetch("./models_default.json", { cache: "no-store" }).then((resp)=>resp.json()).then((result)=>{
+                if(result){
+                    addOptionsEl(result)
+                }
+            })
+        });
+    } 
+    
+
+    createPanel(){     
         // Add panel widget
         const panelWrapper = $el("div.threeCanvasPanelWrapper", {}, [
             $el(
@@ -129,9 +179,14 @@ export class ThreeCanvas {
                     }),
                     $el("select.threeCanvasListModels", {
                         onchange: (e) => {
-                            // console.log(e.target.value)
-                            this.loaderGltf.load(e.target.value, ( glb ) => {
-                                this.addModel( glb );                                                           
+                            const target = e.target
+                            this.loaderGltf.load(target.value, ( glb ) => {
+                                this.addModel( glb );     
+  
+                                // Save currentModel path
+                                this.savedData.currentModel = target.options[target.selectedIndex].dataset?.path
+                                panelWrapper.parentElement.dispatchEvent( new CustomEvent("threeview_model_added", { bubbles: true, detail: {currentModel: this.savedData.currentModel}}) )   
+                                                                         
                             }, 
                             ( data ) => {/* console.log( `Loaded data: ${data.loaded}/${data.total}` */},
                             ( err ) => {
@@ -139,6 +194,14 @@ export class ThreeCanvas {
                                 this.addHeadTest();
                             })
                         },
+                    }),
+                    $el("button.threeCanvasListModelsRefresh", {
+                        textContent: "↺",
+                        onclick: (e)=>{
+                            e.target.style.disabled = true
+                            this.getModelRequest(panelWrapper).then(()=> {e.target.style.disabled = false})
+                            
+                        }
                     }),
                     $el("button.threeCanvasButton.threeCanvasSize", {
                         textContent: "Canvas size",
@@ -188,30 +251,7 @@ export class ThreeCanvas {
             ),
         ]);
 
-        const addOptionsEl = (result) => {
-            const models_options = []
-            models_options.push($el("option", {textContent: "Select model", disabled: true, selected: true}))  
-            for(let type in result.models){ 
-                models_options.push($el("option", {textContent: `[${type[0].toUpperCase()+type.slice(1)}]`, disabled: true}))                       
-                models_options.push(...result.models[type].map((m)=> $el("option", {value: m.path.indexOf("/view") === -1 ? new URL(m.path, import.meta.url).href: m.path, textContent: m.name})))
-            }
-            panelWrapper.querySelector(".threeCanvasListModels").append(...models_options)           
-        }
-        
-        // Get models
-        fetch("/lth/models").then((resp)=> resp?.json()).then((result)=>{
-            if(result?.models){
-                addOptionsEl(result)
-            }
-        }).catch((err)=>{
-            console.log(err)
-            fetch("./models_default.json").then((resp)=>resp.json()).then((result)=>{
-                console.log("!!!",result )
-                if(result){
-                    addOptionsEl({models: result})
-                }
-            })
-        });
+        this.getModelRequest(panelWrapper)
         
         return panelWrapper
     }
@@ -483,6 +523,11 @@ export class ThreeCanvas {
 
         this.directGlb( content, fname, params );
 
+        if(this.listModels.includes(fname)){
+            console.log(`Model name ${fname} already exist in the list loaded models!`)
+            return;
+        }
+
         // Load file to server
         const body = new FormData();
         body.append("image", new Blob([content]), fname);
@@ -618,7 +663,6 @@ export class ThreeCanvas {
 
         // update camera and render
         this.setCamera( pos, center, near, far );
-
     }
 
     /*addObjectToScene(type, parameters = {}) {

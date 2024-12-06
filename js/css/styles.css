@@ -1,11 +1,15 @@
 .threeWrapper {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 5px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 5px;
 }
 
-.threeWrapper3Views{
-  grid-template-columns: 1fr 1fr; 
+.threeCanvasListModels {
+  max-width: 100px;
+}
+
+.threeWrapper3Views {
+  grid-template-columns: 1fr 1fr;
 }
 
 .threeCanvasPanelWrapper {
@@ -41,7 +45,7 @@
 }
 
 .wrapperThreeViewCanvas {
-  position: relative;  
+  position: relative;
   margin: 0px;
   padding: 0px;
   display: block;
@@ -49,7 +53,7 @@
   border-width: 1px;
 }
 
-.lil-gui { 
+.lil-gui {
   --padding: 2px;
   --spacing: 2px;
   --widget-height: 14px;
@@ -58,14 +62,14 @@
   --widget-border-radius: 0px;
   --slider-input-min-width: 30px;
   --color-input-min-width: 30px;
-  --width:150px;
-  --name-width:30%;
-  --background-color:none;
-  --title-background-color:none;
+  --width: 150px;
+  --name-width: 30%;
+  --background-color: none;
+  --title-background-color: none;
   --text-color: #ebebeb;
   --title-text-color: #ebebeb;
-  --widget-color: rgba(20,20,30,0.6);
-  --hover-color: rgba(30,30,50,0.8);
+  --widget-color: rgba(20, 20, 30, 0.6);
+  --hover-color: rgba(30, 30, 50, 0.8);
   --focus-color: #595959;
   --number-color: #2cc9ff;
   --string-color: #a2db3c;

@@ -61,7 +61,7 @@ async function widgetThreeJS(node, nodeData, inputData, app, params = {}) {
     widget = node.addDOMWidget("threeCanvas", "custom_widget", threeCanvas.threeWrapper, {
         getValue() {
             return threeCanvas.getSavedOptions();
-        },
+        },      
     });
 
     const origDraw = widget.draw;
@@ -85,7 +85,12 @@ async function widgetThreeJS(node, nodeData, inputData, app, params = {}) {
     widget.threeCanvas = threeCanvas;
     widget.threeWrapper = threeCanvas.threeWrapper;
 
+    document.body.addEventListener("threeview_model_added", ({detail})=>{
+        // console.log("Detail:", detail?.currentModel)
+    })
+    
     widget.callback = () => {};
+
 
     // Note: If the node is collapsed, the draw method does not work and the canvas will not update.
     // const animator = () => {
@@ -240,12 +245,18 @@ app.registerExtension({
 
                         // Loading last model added
                         if(currentModel){
-                            const [subfolder, name] = currentModel.split("/")
-                            const urlData = await api.apiURL(
-                                `/view?filename=${encodeURIComponent(
-                                    name
-                                )}&type=input&subfolder=${subfolder}${app.getPreviewFormatParam()}${app.getRandParam()}`
-                              );
+
+                            let urlData = ""
+                            if(currentModel.indexOf("assets/") === -1){
+                                const [subfolder, name] = currentModel.split("/")
+                                urlData = await api.apiURL(
+                                    `/view?filename=${encodeURIComponent(
+                                        name
+                                    )}&type=input&subfolder=${subfolder}${app.getPreviewFormatParam()}${app.getRandParam()}`
+                                );
+                            } else {
+                                urlData = new URL(currentModel, import.meta.url).href
+                            }
                             
                             await threeCnavasWidget.loaderGltf.load(urlData, ( glb ) => {
                                 threeCnavasWidget.addModel( glb );
