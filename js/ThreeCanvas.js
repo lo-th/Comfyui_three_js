@@ -1,8 +1,6 @@
 import * as THREE from "./lib/three.module.js";
 import { OrbitControls } from "./lib/jsm/controls/OrbitControls.js";
-import { RGBELoader } from './lib/jsm/loaders/RGBELoader.js';
-import { GLTFLoader } from './lib/jsm/loaders/GLTFLoader.js';
-import { DRACOLoader } from './lib/jsm/loaders/DRACOLoader.js';
+
 import { EffectComposer } from './lib/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from './lib/jsm/postprocessing/RenderPass.js';
 import { ShaderPass } from './lib/jsm/postprocessing/ShaderPass.js';
@@ -15,6 +13,7 @@ import { Depth, Outline, Inline, BlackAll, sobelShader, cannyEdgeShader, thresho
 import { Hub } from "./lib/Hub.js";
 import { Files } from "./lib/Files.js";
 import { Tools } from "./lib/Tools.js";
+import { Pool } from "./lib/Pool.js";
 
 import { $el } from "./lib/utils.js";
 
@@ -275,6 +274,8 @@ export class ThreeCanvas {
         // renderer1.domElement.style.cssText = "position:absolute; margin:0; padding:0; border:1px solid black;";
         renderer1.domElement.setAttribute("view", "LEFT")
         renderer1.domElement.classList.add("threeview_renderer")
+
+        Pool.renderer = renderer1;
         
         // Renderer setup 2  LINES
         const renderer2 = new THREE.WebGLRenderer({ antialias: true, alpha: false });
@@ -395,7 +396,7 @@ export class ThreeCanvas {
 
         this.initLight();
         this.initEnvmap();
-        this.initLoader();
+        //this.initLoader();
 
         if(!this.savedData?.currentModel) this.addHeadTest();
 
@@ -404,12 +405,19 @@ export class ThreeCanvas {
         if(this.autoAutoAnim) this.animate();
     }
 
+    getLoader( type = 'glb' ){
+        // all loader is on Pool.js
+        return Pool.getLoader( type );
+    }
+
     initEnvmap( url = `./assets/clear.hdr` ){
 
         const envUrl = new URL(url, import.meta.url);
         const self = this;
 
-        new RGBELoader().load( envUrl, function ( texture ) {
+
+
+        this.getLoader('hdr').load( envUrl, function ( texture ) {
 
             texture.mapping = THREE.EquirectangularReflectionMapping;
 
@@ -488,14 +496,14 @@ export class ThreeCanvas {
     // import api directlly break index.html preview !!
     setApi( api ){ this.api = api; }
 
-    initLoader(){
+    /*initLoader(){
 
         const dracoPath = new URL(`./lib/jsm/libs/draco/gltf/`, import.meta.url);
         const dracoLoader = new DRACOLoader().setDecoderPath( dracoPath.href )
         dracoLoader.setDecoderConfig({ type: 'js' });
         this.loaderGltf = new GLTFLoader().setDRACOLoader(dracoLoader);
 
-    }
+    }*/
 
     clear(b){
 
@@ -567,7 +575,9 @@ export class ThreeCanvas {
 
     directGlb( data, name ){
 
-        this.loaderGltf.parse( data, name, ( glb ) => { this.addModel( glb ); })
+        this.getLoader('glb').parse( data, name, ( glb ) => { this.addModel( glb ); })
+
+        //this.loaderGltf.parse( data, name, ( glb ) => { this.addModel( glb ); })
 
     }
 
@@ -580,19 +590,9 @@ export class ThreeCanvas {
         let u = headModel.href;
         this.defPath = u.substring( 0, u.lastIndexOf('/')+1 );
 
-        /*const light = new THREE.PointLight( 0x0080FF, 300 );
-        light.position.set(-5,5,-10)
-        scene.add( light );
 
-        const light2 = new THREE.PointLight( 0xff8000, 100 );
-        light2.position.set(5,-5,-5)
-        scene.add( light2 );
-
-        const light3 = new THREE.PointLight( 0xFFFFFF, 100 );
-        light3.position.set(0,5,5)
-        scene.add( light3 );*/
-
-        this.loaderGltf.load( headModel.href, ( glb ) => {
+        //this.loaderGltf.
+        this.getLoader('glb').load( headModel.href, ( glb ) => {
             this.addModel( glb );
             // Load camera data 
             if( this.savedData?.camera ){
@@ -789,14 +789,13 @@ export class ThreeCanvas {
 
     async render() {
         if (this.autoScale) this.resize();
-        //this.tools.forEach((data)=>data.renderer.render(this.scene, data.camera))
 
+        // TODO: find better way to add hub on top
         if(!this.hub.ready) this.hub.add(this.getDom(0))
         
         this.tools.forEach((data)=>{
+
             let camera = this.VIEWS3 && !this.fixCamers ? data.camera : this.camera
-
-
 
             this.scene.overrideMaterial = !data.material ? null: data.material;
 
@@ -814,7 +813,6 @@ export class ThreeCanvas {
 
             }
 
-            //this.scene.overrideMaterial = !data.material ? null: data.material; 
             return data.renderer.render(this.scene, camera)
 
         })
@@ -843,7 +841,7 @@ export class ThreeCanvas {
 
     }
 
-    async update(widgetWidth, posY) {
+    /*async update(widgetWidth, posY) {
 
         let w = widgetWidth - this.size.offset;
         if (this.size.w === w) return;
@@ -851,7 +849,7 @@ export class ThreeCanvas {
         this.size.h = w * this.size.r;
         this.needResize = true;
 
-    }
+    }*/
 
     // Get object saves property
     getSavedOptions(){

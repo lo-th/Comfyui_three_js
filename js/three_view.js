@@ -229,7 +229,7 @@ app.registerExtension({
                     
                     if (threeCanvasId !== -1 && w?.widgets_values[threeCanvasId]) {
                         // Get widget threeCanvas by Index
-                        const threeCnavasWidget = this.widgets[threeCanvasId].threeCanvas
+                        const threeCanvasWidget = this.widgets[threeCanvasId].threeCanvas
 
                         // Get value size and options
                         const {size: sizeData, camera: cameraData, currentModel} =  w.widgets_values[threeCanvasId];
@@ -238,7 +238,7 @@ app.registerExtension({
                         if(sizeData){
                             const { w: width, h: height } = sizeData;
                             if(width && height){ 
-                                threeCnavasWidget.setCanvasSize(width, height);
+                                threeCanvasWidget.setCanvasSize(width, height);
                                 this.title = `${this.type} [${width}x${height}]`;
                             }
                         }
@@ -258,17 +258,17 @@ app.registerExtension({
                                 urlData = new URL(currentModel, import.meta.url).href
                             }
                             
-                            await threeCnavasWidget.loaderGltf.load(urlData, ( glb ) => {
-                                threeCnavasWidget.addModel( glb );
+                            await threeCanvasWidget.getLoader('glb').load(urlData, ( glb ) => {
+                                threeCanvasWidget.addModel( glb );
 
                             // Load camera data 
-                            if( cameraData ) threeCnavasWidget.loadCameraState( cameraData )
+                            if( cameraData ) threeCanvasWidget.loadCameraState( cameraData )
                                                            
                             }, 
                             ( data ) => {/* console.log( `Loaded data: ${data.loaded}/${data.total}` */},
                             ( err ) => {
                                 console.log( err );
-                                threeCnavasWidget.addHeadTest();
+                                threeCanvasWidget.addHeadTest();
                             })
                         }
 
