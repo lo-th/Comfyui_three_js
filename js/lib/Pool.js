@@ -19,7 +19,7 @@ export const Pool = {
 
 	loader:{
 
-		gltf:null,
+		glb:null,
 		fbx:null,
 		obj:null,
 		stl:null,
@@ -62,7 +62,7 @@ export const Pool = {
 	},
 
 	l_glb(){
-		if(Pool.loader.gltf === null ){
+		if(Pool.loader.glb === null ){
 			const dracoPath = new URL(`./jsm/libs/draco/gltf/`, import.meta.url);
 	        const dracoLoader = new DRACOLoader().setDecoderPath( dracoPath.href )
 	        dracoLoader.setDecoderConfig({ type: 'js' });
@@ -70,13 +70,13 @@ export const Pool = {
 	        const ktx2Path = new URL(`./jsm/libs/basis/`, import.meta.url);
 	        const ktx2Loader = new KTX2Loader().setTranscoderPath( ktx2Path.href )
 
-	        Pool.loader.gltf = new GLTFLoader( Pool.manager )
+	        Pool.loader.glb = new GLTFLoader( Pool.manager )
 	        .setCrossOrigin('anonymous')
 	        .setDRACOLoader(dracoLoader)
 	        .setKTX2Loader(ktx2Loader.detectSupport(Pool.renderer))
 			.setMeshoptDecoder(MeshoptDecoder);
 		}
-		return Pool.loader.gltf;
+		return Pool.loader.glb;
 	}
 
 }
