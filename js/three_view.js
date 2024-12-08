@@ -259,7 +259,7 @@ app.registerExtension({
                             }
                             
                             await threeCanvasWidget.getLoader('glb').load(urlData, ( glb ) => {
-                                threeCanvasWidget.addModel( glb );
+                            threeCanvasWidget.addModel( glb );
 
                             // Load camera data 
                             if( cameraData ) threeCanvasWidget.loadCameraState( cameraData )

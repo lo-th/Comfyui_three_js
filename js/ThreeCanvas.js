@@ -179,7 +179,7 @@ export class ThreeCanvas {
                     $el("select.threeCanvasListModels", {
                         onchange: (e) => {
                             const target = e.target
-                            this.loaderGltf.load(target.value, ( glb ) => {
+                            this.getLoader('glb').load(target.value, ( glb ) => {
                                 this.addModel( glb );     
   
                                 // Save currentModel path
@@ -529,12 +529,16 @@ export class ThreeCanvas {
 
         const {content, fname, ftype} = loadData
 
-        this.directGlb( content, fname, params );
+        
+
+        this.directParser( content, fname, ftype, params );
 
         if(this.listModels.includes(fname)){
             console.log(`Model name ${fname} already exist in the list loaded models!`)
             return;
         }
+
+        if(!this.api) return;
 
         // Load file to server
         const body = new FormData();
@@ -568,15 +572,28 @@ export class ThreeCanvas {
         if( type==='glb' ) e.stopPropagation()
 
         reader.onload = function ( e ) {
-            if( type==='glb' ) this.directGlb( e.target.result, finalName )
+            if( type==='glb' ) this.directParser( e.target.result, finalName )
         }.bind(this);
 
     }
 
-    directGlb( data, name ){
+    directParser( data, name, type = 'glb' ){
 
-        this.getLoader('glb').parse( data, name, ( glb ) => { this.addModel( glb ); })
+        console.log('>>>', data, name, type)
 
+        if(type === 'stl'){
+            const geometry = this.getLoader(type).parse( data );
+            console.log(geometry)
+            const material = new THREE.MeshStandardMaterial();
+            let object = new THREE.Mesh( geometry, material );
+            this.addModel( object );
+            return
+        }
+
+        const object = this.getLoader(type).parse(data);
+        this.addModel( object );
+
+        //this.getLoader(type).parse( data, name, ( object ) => { this.addModel( object ); })
         //this.loaderGltf.parse( data, name, ( glb ) => { this.addModel( glb ); })
 
     }
@@ -590,7 +607,6 @@ export class ThreeCanvas {
         let u = headModel.href;
         this.defPath = u.substring( 0, u.lastIndexOf('/')+1 );
 
-
         //this.loaderGltf.
         this.getLoader('glb').load( headModel.href, ( glb ) => {
             this.addModel( glb );
@@ -603,12 +619,16 @@ export class ThreeCanvas {
 
     }
 
-    addModel( glb ){
+    addModel( object ){
 
         this.clear();
 
-        const model = glb.scene || glb.scenes[0];
-        const clips = glb.animations || [];
+        console.log( "<<<", object )
+
+        let model = object.scene// || glb.scenes[0];
+        if(!model) model = object;
+
+        const clips = object.animations || [];
 
         // Apply automorph to model //! 
         // Convention model name is ModelNale__M__TypeOfMorph

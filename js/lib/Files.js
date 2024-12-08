@@ -54,8 +54,8 @@ export class Files {
             case 'lut':
             t = [ { description: 'Lut', accept: { 'text/plain': ['.cube', '.3dl'] } }, ]
             break;
-            case 'glb':case 'gltf':
-            t = [ { description: 'Model', accept: { 'model/*': ['.glb', '.gltf'] } }, ]
+            case 'glb': case 'gltf': case 'fbx': case 'obj': case 'stl':
+            t = [ { description: 'Model', accept: { 'model/*': ['.glb', '.gltf', '.fbx', '.obj', '.stl'] } }, ]
             break;
 
         }
@@ -99,20 +99,20 @@ export class Files {
             let ftype = fname.substring( fname.lastIndexOf('.')+1, fname.length );
 
             const dataUrl = [ 'png', 'jpg', 'jpeg', 'mp4', 'webm', 'ogg', 'mp3' ];
-            const dataBuf = [ 'sea', 'z', 'hex', 'bvh', 'BVH', 'glb', 'gltf', 'exr' ];
+            const dataBuf = [ 'sea', 'z', 'hex', 'bvh', 'BVH', 'glb', 'gltf', 'exr', 'fbx', 'stl' ];
             const reader = new FileReader();
 
-            if( dataUrl.indexOf( ftype ) !== -1 ) reader.readAsDataURL( file )
-            else if( dataBuf.indexOf( ftype ) !== -1 ) reader.readAsArrayBuffer( file )
-            else reader.readAsText( file )
+            if( dataUrl.indexOf( ftype ) !== -1 ) reader.readAsDataURL( file );
+            else if( dataBuf.indexOf( ftype ) !== -1 ) reader.readAsArrayBuffer( file );
+            else reader.readAsText( file );
 
             reader.onload = function(e) {
 
-                let content = e.target.result
+                let content = e.target.result;
 
-                //console.log(type, files)
+                //console.log('>>>>', type, ftype)
 
-                switch(type){
+                switch(ftype){
                     case 'image':
                         let img = new Image();
                         img.onload = function() {

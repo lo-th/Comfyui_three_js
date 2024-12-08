@@ -14,7 +14,7 @@ import { EXRLoader } from './jsm/loaders/EXRLoader.js';
 
 export const Pool = {
 
-	renderer:null,
+	renderer: null,
 	manager: new THREE.LoadingManager(),
 
 	loader:{
