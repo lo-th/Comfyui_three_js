@@ -16,13 +16,13 @@ export class Hub {
 
     }
 
-    clear(){
-        var div = this.content;
-        //while( div.firstChild ){ div.removeChild(div.firstChild) }
+    reset(){
 
         if(this.gui){
             if(this.morph) this.morph.destroy()
+            if(this.skin) this.skin.destroy()
         }
+    
     }
 
     add( dom ){
@@ -64,7 +64,31 @@ export class Hub {
 
         this.morph = folder
 
-        
+    }
+
+    addBones( model ){
+
+        const folder = this.gui.addFolder( 'Bones' );
+
+        for(const name in model){
+
+            let m = model[name]
+
+            if(!m.skeleton) continue;
+
+            for(let i in m.skeleton.bones){
+                let b = m.skeleton.bones[i]
+                if(b.name==='head'){
+                    folder.add( b.rotation, 'x', -Math.PI*0.5, Math.PI*0.5 ).name('head X').onChange( v => { this.root.render() }  )
+                    folder.add( b.rotation, 'y', -Math.PI*0.25, Math.PI*0.25 ).name('head Y').onChange( v => { this.root.render() }  )
+                    folder.add( b.rotation, 'z', -Math.PI*0.5, Math.PI*0.5 ).name('head Z').onChange( v => { this.root.render() }  )
+                }
+                
+            }
+
+        }
+
+        this.skin = folder
 
     }
 

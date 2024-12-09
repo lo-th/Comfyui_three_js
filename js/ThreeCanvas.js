@@ -58,15 +58,25 @@ export class ThreeCanvas {
         this.fixCamers = fixCamers;   
         
         // List models
-        this.listModels = []
+        this.listModels = [];
+        this.api = null;
+
     }
+
+    // import api directlly break index.html preview !!
+    setApi( api ){ this.api = api; }
 
     getDom(idx=0) {
         return this.tools[idx].renderer.domElement;
     }
 
+    // all loader is on Pool.js
+    getLoader( type = 'glb' ){
+        return Pool.getLoader( type );
+    }
+
     getWrapper(idx=0){
-        return this.wrappers[idx]
+        return this.wrappers[idx];
     }
 
     createWrappers(canvasNames){
@@ -405,17 +415,12 @@ export class ThreeCanvas {
         if(this.autoAutoAnim) this.animate();
     }
 
-    getLoader( type = 'glb' ){
-        // all loader is on Pool.js
-        return Pool.getLoader( type );
-    }
+    
 
     initEnvmap( url = `./assets/clear.hdr` ){
 
         const envUrl = new URL(url, import.meta.url);
         const self = this;
-
-
 
         this.getLoader('hdr').load( envUrl, function ( texture ) {
 
@@ -493,22 +498,10 @@ export class ThreeCanvas {
         }))
     }
 
-    // import api directlly break index.html preview !!
-    setApi( api ){ this.api = api; }
-
-    /*initLoader(){
-
-        const dracoPath = new URL(`./lib/jsm/libs/draco/gltf/`, import.meta.url);
-        const dracoLoader = new DRACOLoader().setDecoderPath( dracoPath.href )
-        dracoLoader.setDecoderConfig({ type: 'js' });
-        this.loaderGltf = new GLTFLoader().setDRACOLoader(dracoLoader);
-
-    }*/
-
     clear(b){
 
         Tools.reset();
-        if(this.hub) this.hub.clear();
+        if(this.hub) this.hub.reset();
 
         if( this.model ) this.scene.remove(this.model);
         this.helper.children = [];
@@ -523,13 +516,12 @@ export class ThreeCanvas {
         })
 
         if( !loadData ) {
-            console.log("Error load model!")
+            console.log("Error load model!");
             return;
         }
 
-        const {content, fname, ftype} = loadData
+        const {content, fname, ftype} = loadData;
 
-        
 
         this.directParser( content, fname, ftype, params );
 
@@ -579,22 +571,27 @@ export class ThreeCanvas {
 
     directParser( data, name, type = 'glb' ){
 
-        console.log('>>>', data, name, type)
+        console.log('>>', data, name, type)
 
         if(type === 'stl'){
             const geometry = this.getLoader(type).parse( data );
-            console.log(geometry)
-            const material = new THREE.MeshStandardMaterial();
+            geometry.rotateX(-Math.PI*0.5);
+            //geometry.computeVertexNormals()
+            const material = new THREE.MeshStandardMaterial({color:0xEEEEEE, roughness:0.02, metalness:0.1, vertexColors:false, flatShading:true });
             let object = new THREE.Mesh( geometry, material );
             this.addModel( object );
             return
         }
 
-        const object = this.getLoader(type).parse(data);
-        this.addModel( object );
+        
 
-        //this.getLoader(type).parse( data, name, ( object ) => { this.addModel( object ); })
-        //this.loaderGltf.parse( data, name, ( glb ) => { this.addModel( glb ); })
+        if(type === 'glb' ||type === 'gltf') this.getLoader(type).parse( data, name, ( object ) => { this.addModel( object ); })
+        else {
+            const object = this.getLoader(type).parse(data);
+            this.addModel( object );
+        }
+
+        
 
     }
 
@@ -623,9 +620,10 @@ export class ThreeCanvas {
 
         this.clear();
 
-        console.log( "<<<", object )
+        console.log( ">>>", object )
 
-        let model = object.scene// || glb.scenes[0];
+        let model;
+        if(object.scene) model = object.scene || glb.scenes[0];
         if(!model) model = object;
 
         const clips = object.animations || [];
@@ -635,7 +633,8 @@ export class ThreeCanvas {
         const haveMorph = Tools.autoMorph( model );
 
         // get skinning 
-        const haveSkinning = Tools.autoSkinning( model );
+        const haveSkin = Tools.autoSkinning( model );
+
 
         // active shadow 
         Tools.autoShadow( model );
@@ -643,11 +642,11 @@ export class ThreeCanvas {
         // [BUG] Set position, when delete model and add again, position unknown and no visible model
         model.position.set(0,0,0)
 
-        model.updateMatrixWorld(); 
+        model.updateMatrixWorld();
 
+        // test full  size
         let b0 = new THREE.BoxHelper( model, 0x201924 );
         //this.helper.add(b0)
-
         b0.geometry.computeBoundingSphere()
         b0.geometry.computeBoundingBox()
         const box = b0.geometry.boundingBox;
@@ -655,10 +654,8 @@ export class ThreeCanvas {
         const radius = b0.geometry.boundingSphere.radius;
         const center = box.getCenter(new THREE.Vector3());
 
-        //console.log( radius, sizer )
-
         if(haveMorph) this.hub.addMorph( Tools.MorphModel );
-
+        if(haveSkin) this.hub.addBones( Tools.SkinModel );
         //Tools.setMorph(Tools.MorphModel.face,'Smile_Open', 1)
 
         let lightpos = center.clone().add( new THREE.Vector3(-radius*0.3,radius*2, radius) )
@@ -683,6 +680,7 @@ export class ThreeCanvas {
 
         // update camera and render
         this.setCamera( pos, center, near, far );
+
     }
 
     /*addObjectToScene(type, parameters = {}) {
@@ -756,7 +754,8 @@ export class ThreeCanvas {
         this.render();
     }
 
-    initComposer(renderer, camera){      
+    initComposer(renderer, camera){
+
         const operatorLines = this?.sobelPassSelect ?? 0
         
         // init only one composer
@@ -808,6 +807,7 @@ export class ThreeCanvas {
     }
 
     async render() {
+
         if (this.autoScale) this.resize();
 
         // TODO: find better way to add hub on top

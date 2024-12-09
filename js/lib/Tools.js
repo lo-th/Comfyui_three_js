@@ -6,9 +6,11 @@ import {
 export const Tools = {
 
 	MorphModel:{},
+    SkinModel:{},
 
 	reset:() => {
-		Tools.MorphModel = {}
+		Tools.MorphModel = {};
+        Tools.SkinModel = {};
 	},
 
 	getMesh:( scene ) => {
@@ -40,7 +42,11 @@ export const Tools = {
 
     	model.traverse( ( child ) => {
             if ( child.isMesh ){
-            	if(child.skeleton) haveSkinning = true;
+            	if(child.skeleton){ 
+                    haveSkinning = true;
+                    if(child.name!=='Head')Tools.SkinModel[child.name] = child;
+                    
+                }
             }
         })
 

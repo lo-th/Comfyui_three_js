@@ -2,7 +2,7 @@
 [project]
 name = "comfyui_three_js"
 description = "Use power of three.js in 3d view on comfyui."
-version = "0.2.6"
+version = "0.2.7"
 license = { file = "LICENSE" }
 dependencies  = []
 
